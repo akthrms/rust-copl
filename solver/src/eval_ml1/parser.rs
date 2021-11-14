@@ -4,7 +4,7 @@ use nom::{
     branch::alt,
     bytes::complete::tag,
     character::complete::{char, digit1},
-    combinator::opt,
+    combinator::{opt, recognize},
     multi::many0,
     sequence::{delimited, tuple},
     IResult,
@@ -93,15 +93,15 @@ fn parse_integer(input: &str) -> IResult<&str, Expression> {
 }
 
 fn parse_pos_number(input: &str) -> IResult<&str, i64> {
-    let (input, n) = ws(digit1)(input)?;
+    let (input, n) = digit1(input)?;
     let n = n.parse::<i64>().unwrap();
     Ok((input, n))
 }
 
 fn parse_neg_number(input: &str) -> IResult<&str, i64> {
-    let (input, (_, n)) = tuple((char('-'), digit1))(input)?;
+    let (input, n) = recognize(tuple((char('-'), digit1)))(input)?;
     let n = n.parse::<i64>().unwrap();
-    Ok((input, -n))
+    Ok((input, n))
 }
 
 fn parse_boolean(input: &str) -> IResult<&str, Expression> {
