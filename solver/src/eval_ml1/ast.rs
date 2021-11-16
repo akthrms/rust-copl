@@ -20,13 +20,13 @@ impl fmt::Display for Expression {
             Boolean(b) => write!(f, "{}", b),
             If(condition, consequence, alternative) => write!(
                 f,
-                "if {} then {} else {}",
+                "(if {} then {} else {})",
                 condition, consequence, alternative
             ),
-            Plus(left, right) => write!(f, "{} + {}", left, right),
-            Minus(left, right) => write!(f, "{} - {}", left, right),
-            Times(left, right) => write!(f, "{} * {}", left, right),
-            LessThan(left, right) => write!(f, "{} < {}", left, right),
+            Plus(left, right) => write!(f, "({} + {})", left, right),
+            Minus(left, right) => write!(f, "({} - {})", left, right),
+            Times(left, right) => write!(f, "({} * {})", left, right),
+            LessThan(left, right) => write!(f, "({} < {})", left, right),
         }
     }
 }
