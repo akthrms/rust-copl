@@ -2,13 +2,13 @@ use std::fmt;
 
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub enum Expression {
-    Integer(i64),
-    Boolean(bool),
+    Int(i64),
+    Bool(bool),
     If(Box<Expression>, Box<Expression>, Box<Expression>),
     Plus(Box<Expression>, Box<Expression>),
     Minus(Box<Expression>, Box<Expression>),
     Times(Box<Expression>, Box<Expression>),
-    LessThan(Box<Expression>, Box<Expression>),
+    Lt(Box<Expression>, Box<Expression>),
 }
 
 impl fmt::Display for Expression {
@@ -16,8 +16,8 @@ impl fmt::Display for Expression {
         use crate::eval_ml1::ast::Expression::*;
 
         match self {
-            Integer(n) => write!(f, "{}", n),
-            Boolean(b) => write!(f, "{}", b),
+            Int(n) => write!(f, "{}", n),
+            Bool(b) => write!(f, "{}", b),
             If(condition, consequence, alternative) => write!(
                 f,
                 "(if {} then {} else {})",
@@ -26,7 +26,7 @@ impl fmt::Display for Expression {
             Plus(left, right) => write!(f, "({} + {})", left, right),
             Minus(left, right) => write!(f, "({} - {})", left, right),
             Times(left, right) => write!(f, "({} * {})", left, right),
-            LessThan(left, right) => write!(f, "({} < {})", left, right),
+            Lt(left, right) => write!(f, "({} < {})", left, right),
         }
     }
 }

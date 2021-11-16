@@ -5,14 +5,14 @@ use crate::eval_ml1::{
 
 pub fn solve(expression: Expression, n: usize, end: bool) {
     match expression {
-        Integer(_) => println!(
+        Int(_) => println!(
             "{}{} evalto {} by E-Int {{}}{}",
             ident(n),
             expression.clone(),
             evaluate(expression.clone()),
             semicolon(end)
         ),
-        Boolean(_) => println!(
+        Bool(_) => println!(
             "{}{} evalto {} by E-Bool {{}}{}",
             ident(n),
             expression.clone(),
@@ -21,7 +21,7 @@ pub fn solve(expression: Expression, n: usize, end: bool) {
         ),
         If(ref condition, ref consequence, ref alternative) => {
             match evaluate(*condition.clone()) {
-                Boolean(true) => {
+                Bool(true) => {
                     println!(
                         "{}{} evalto {} by E-IfT {{",
                         ident(n),
@@ -31,7 +31,7 @@ pub fn solve(expression: Expression, n: usize, end: bool) {
                     solve(*condition.clone(), n + 1, false);
                     solve(*consequence.clone(), n + 1, true);
                 }
-                Boolean(false) => {
+                Bool(false) => {
                     println!(
                         "{}{} evalto {} by E-IfF {{",
                         ident(n),
@@ -99,7 +99,7 @@ pub fn solve(expression: Expression, n: usize, end: bool) {
             );
             println!("{}}}{}", ident(n), semicolon(end));
         }
-        LessThan(ref left, ref right) => {
+        Lt(ref left, ref right) => {
             println!(
                 "{}{} evalto {} by E-Lt {{",
                 ident(n),
