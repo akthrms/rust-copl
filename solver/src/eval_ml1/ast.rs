@@ -13,15 +13,15 @@ pub enum Expression {
 
 impl fmt::Display for Expression {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        use self::Expression::*;
+        use crate::eval_ml1::ast::Expression::*;
 
         match self {
             Integer(n) => write!(f, "{}", n),
             Boolean(b) => write!(f, "{}", b),
-            If(expression1, expression2, expression3) => write!(
+            If(condition, consequence, alternative) => write!(
                 f,
                 "if {} then {} else {}",
-                expression1, expression2, expression3
+                condition, consequence, alternative
             ),
             Plus(left, right) => write!(f, "{} + {}", left, right),
             Minus(left, right) => write!(f, "{} - {}", left, right),
