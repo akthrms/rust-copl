@@ -1,34 +1,30 @@
-use crate::eval_ml1::ast::Expression;
+use crate::eval_ml1::ast::{Expression, Expression::*};
 
 pub fn evaluate(expression: Expression) -> Expression {
-    use crate::eval_ml1::ast::Expression::*;
-
     match expression {
         Integer(n) => Integer(n),
         Boolean(b) => Boolean(b),
-        If(expression1, expression2, expression3) => match evaluate(*expression1) {
-            Boolean(true) => evaluate(*expression2),
-            Boolean(false) => evaluate(*expression3),
+        If(condition, consequence, alternative) => match evaluate(*condition) {
+            Boolean(true) => evaluate(*consequence),
+            Boolean(false) => evaluate(*alternative),
             _ => unreachable!(),
         },
-        Add(expression1, expression2) => match (evaluate(*expression1), evaluate(*expression2)) {
+        Plus(left, right) => match (evaluate(*left), evaluate(*right)) {
             (Integer(n), Integer(m)) => Integer(n + m),
             _ => unreachable!(),
         },
-        Sub(expression1, expression2) => match (evaluate(*expression1), evaluate(*expression2)) {
+        Minus(left, right) => match (evaluate(*left), evaluate(*right)) {
             (Integer(n), Integer(m)) => Integer(n - m),
             _ => unreachable!(),
         },
-        Mul(expression1, expression2) => match (evaluate(*expression1), evaluate(*expression2)) {
+        Times(left, right) => match (evaluate(*left), evaluate(*right)) {
             (Integer(n), Integer(m)) => Integer(n * m),
             _ => unreachable!(),
         },
-        LessThan(expression1, expression2) => {
-            match (evaluate(*expression1), evaluate(*expression2)) {
-                (Integer(n), Integer(m)) => Boolean(n < m),
-                _ => unreachable!(),
-            }
-        }
+        LessThan(left, right) => match (evaluate(*left), evaluate(*right)) {
+            (Integer(n), Integer(m)) => Boolean(n < m),
+            _ => unreachable!(),
+        },
     }
 }
 

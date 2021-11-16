@@ -1,4 +1,4 @@
-use crate::eval_ml1::ast::Expression;
+use crate::eval_ml1::ast::{Expression, Expression::*};
 use crate::util::ws;
 use nom::{
     branch::alt,
@@ -25,10 +25,10 @@ pub fn parse(input: &str) -> IResult<&str, Expression> {
 }
 
 fn parse_expression(input: &str) -> IResult<&str, Expression> {
-    let (input, (expression1, expression2)) = tuple((parse_term1, opt(parse_less_than)))(input)?;
-    let expression = match expression2 {
-        Some(expression2) => Expression::LessThan(Box::new(expression1), Box::new(expression2)),
-        None => expression1,
+    let (input, (left, right)) = tuple((parse_term1, opt(parse_less_than)))(input)?;
+    let expression = match right {
+        Some(right) => LessThan(Box::new(left), Box::new(right)),
+        None => left,
     };
     Ok((input, expression))
 }
@@ -41,14 +41,13 @@ fn parse_less_than(input: &str) -> IResult<&str, Expression> {
 fn parse_term1(input: &str) -> IResult<&str, Expression> {
     let (input, (expression, expressions)) = tuple((parse_term2, parse_add_sub))(input)?;
     let expression =
-        expressions.iter().fold(
-            expression,
-            |expression1, (operator, expression2)| match operator {
-                '+' => Expression::Add(Box::new(expression1), Box::new(expression2.clone())),
-                '-' => Expression::Sub(Box::new(expression1), Box::new(expression2.clone())),
+        expressions
+            .iter()
+            .fold(expression, |left, (operator, right)| match operator {
+                '+' => Plus(Box::new(left), Box::new(right.clone())),
+                '-' => Minus(Box::new(left), Box::new(right.clone())),
                 _ => unreachable!(),
-            },
-        );
+            });
     Ok((input, expression))
 }
 
@@ -63,13 +62,12 @@ fn parse_add_sub(input: &str) -> IResult<&str, Vec<(char, Expression)>> {
 fn parse_term2(input: &str) -> IResult<&str, Expression> {
     let (input, (expression, expressions)) = tuple((parse_factor, parse_mul))(input)?;
     let expression =
-        expressions.iter().fold(
-            expression,
-            |expression1, (operator, expression2)| match operator {
-                '*' => Expression::Mul(Box::new(expression1), Box::new(expression2.clone())),
+        expressions
+            .iter()
+            .fold(expression, |left, (operator, right)| match operator {
+                '*' => Times(Box::new(left), Box::new(right.clone())),
                 _ => unreachable!(),
-            },
-        );
+            });
     Ok((input, expression))
 }
 
@@ -91,7 +89,7 @@ fn parse_value(input: &str) -> IResult<&str, Expression> {
 
 fn parse_integer(input: &str) -> IResult<&str, Expression> {
     let (input, n) = alt((ws(parse_pos_number), ws(parse_neg_number)))(input)?;
-    Ok((input, Expression::Integer(n)))
+    Ok((input, Integer(n)))
 }
 
 fn parse_pos_number(input: &str) -> IResult<&str, i64> {
@@ -108,7 +106,7 @@ fn parse_neg_number(input: &str) -> IResult<&str, i64> {
 
 fn parse_boolean(input: &str) -> IResult<&str, Expression> {
     let (input, b) = alt((parse_true, parse_false))(input)?;
-    Ok((input, Expression::Boolean(b)))
+    Ok((input, Boolean(b)))
 }
 
 fn parse_true(input: &str) -> IResult<&str, bool> {
@@ -129,7 +127,7 @@ fn parse_paren(input: &str) -> IResult<&str, Expression> {
 }
 
 fn parse_if(input: &str) -> IResult<&str, Expression> {
-    let (input, (_, expression1, _, expression2, _, expression3)) = tuple((
+    let (input, (_, condition, _, consequence, _, alternative)) = tuple((
         ws(tag("if")),
         parse_expression,
         ws(tag("then")),
@@ -137,10 +135,10 @@ fn parse_if(input: &str) -> IResult<&str, Expression> {
         ws(tag("else")),
         parse_expression,
     ))(input)?;
-    let expression = Expression::If(
-        Box::new(expression1),
-        Box::new(expression2),
-        Box::new(expression3),
+    let expression = If(
+        Box::new(condition),
+        Box::new(consequence),
+        Box::new(alternative),
     );
     Ok((input, expression))
 }
@@ -153,7 +151,7 @@ mod tests {
     fn test_parse1() {
         assert_eq!(
             parse("3 + 5").unwrap().1,
-            Add(Box::new(Integer(3)), Box::new(Integer(5)))
+            Plus(Box::new(Integer(3)), Box::new(Integer(5)))
         );
     }
 
@@ -161,8 +159,8 @@ mod tests {
     fn test_parse2() {
         assert_eq!(
             parse("8 - 2 - 3").unwrap().1,
-            Sub(
-                Box::new(Sub(Box::new(Integer(8)), Box::new(Integer(2)))),
+            Minus(
+                Box::new(Minus(Box::new(Integer(8)), Box::new(Integer(2)))),
                 Box::new(Integer(3))
             )
         );
@@ -172,9 +170,9 @@ mod tests {
     fn test_parse3() {
         assert_eq!(
             parse("(4 + 5) * (1 - 10)").unwrap().1,
-            Mul(
-                Box::new(Add(Box::new(Integer(4)), Box::new(Integer(5)))),
-                Box::new(Sub(Box::new(Integer(1)), Box::new(Integer(10))))
+            Times(
+                Box::new(Plus(Box::new(Integer(4)), Box::new(Integer(5)))),
+                Box::new(Minus(Box::new(Integer(1)), Box::new(Integer(10))))
             )
         );
     }
@@ -185,8 +183,8 @@ mod tests {
             parse("if 4 < 5 then 2 + 3 else 8 * 8").unwrap().1,
             If(
                 Box::new(LessThan(Box::new(Integer(4)), Box::new(Integer(5)))),
-                Box::new(Add(Box::new(Integer(2)), Box::new(Integer(3)))),
-                Box::new(Mul(Box::new(Integer(8)), Box::new(Integer(8))))
+                Box::new(Plus(Box::new(Integer(2)), Box::new(Integer(3)))),
+                Box::new(Times(Box::new(Integer(8)), Box::new(Integer(8))))
             )
         );
     }
@@ -195,15 +193,15 @@ mod tests {
     fn test_parse5() {
         assert_eq!(
             parse("3 + if -23 < -2 * 8 then 8 else 2 + 4").unwrap().1,
-            Add(
+            Plus(
                 Box::new(Integer(3)),
                 Box::new(If(
                     Box::new(LessThan(
                         Box::new(Integer(-23)),
-                        Box::new(Mul(Box::new(Integer(-2)), Box::new(Integer(8))))
+                        Box::new(Times(Box::new(Integer(-2)), Box::new(Integer(8))))
                     )),
                     Box::new(Integer(8)),
-                    Box::new(Add(Box::new(Integer(2)), Box::new(Integer(4))))
+                    Box::new(Plus(Box::new(Integer(2)), Box::new(Integer(4))))
                 ))
             )
         );
@@ -213,13 +211,13 @@ mod tests {
     fn test_parse6() {
         assert_eq!(
             parse("3 + (if -23 < -2 * 8 then 8 else 2) + 4").unwrap().1,
-            Add(
-                Box::new(Add(
+            Plus(
+                Box::new(Plus(
                     Box::new(Integer(3)),
                     Box::new(If(
                         Box::new(LessThan(
                             Box::new(Integer(-23)),
-                            Box::new(Mul(Box::new(Integer(-2)), Box::new(Integer(8))))
+                            Box::new(Times(Box::new(Integer(-2)), Box::new(Integer(8))))
                         )),
                         Box::new(Integer(8)),
                         Box::new(Integer(2))
