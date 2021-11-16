@@ -28,6 +28,7 @@ pub fn solve(expression: Expression, n: usize, end: bool) {
                         expression.clone(),
                         evaluate(expression.clone())
                     );
+                    solve(*condition.clone(), n + 1, false);
                     solve(*consequence.clone(), n + 1, true);
                 }
                 Boolean(false) => {
@@ -37,6 +38,7 @@ pub fn solve(expression: Expression, n: usize, end: bool) {
                         expression.clone(),
                         evaluate(expression.clone())
                     );
+                    solve(*condition.clone(), n + 1, false);
                     solve(*alternative.clone(), n + 1, true);
                 }
                 _ => unreachable!(),
