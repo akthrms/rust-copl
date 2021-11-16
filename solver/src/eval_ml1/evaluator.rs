@@ -11,22 +11,24 @@ pub fn evaluate(expression: Expression) -> Expression {
             Boolean(false) => evaluate(*expression3),
             _ => unreachable!(),
         },
-        Add(left, right) => match (evaluate(*left), evaluate(*right)) {
+        Add(expression1, expression2) => match (evaluate(*expression1), evaluate(*expression2)) {
             (Integer(n), Integer(m)) => Integer(n + m),
             _ => unreachable!(),
         },
-        Sub(left, right) => match (evaluate(*left), evaluate(*right)) {
+        Sub(expression1, expression2) => match (evaluate(*expression1), evaluate(*expression2)) {
             (Integer(n), Integer(m)) => Integer(n - m),
             _ => unreachable!(),
         },
-        Mul(left, right) => match (evaluate(*left), evaluate(*right)) {
+        Mul(expression1, expression2) => match (evaluate(*expression1), evaluate(*expression2)) {
             (Integer(n), Integer(m)) => Integer(n * m),
             _ => unreachable!(),
         },
-        LessThan(left, right) => match (evaluate(*left), evaluate(*right)) {
-            (Integer(n), Integer(m)) => Boolean(n < m),
-            _ => unreachable!(),
-        },
+        LessThan(expression1, expression2) => {
+            match (evaluate(*expression1), evaluate(*expression2)) {
+                (Integer(n), Integer(m)) => Boolean(n < m),
+                _ => unreachable!(),
+            }
+        }
     }
 }
 

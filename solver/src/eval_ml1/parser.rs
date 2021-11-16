@@ -25,10 +25,10 @@ pub fn parse(input: &str) -> IResult<&str, Expression> {
 }
 
 fn parse_expression(input: &str) -> IResult<&str, Expression> {
-    let (input, (left, right)) = tuple((parse_term1, opt(parse_less_than)))(input)?;
-    let expression = match right {
-        Some(right) => Expression::LessThan(Box::new(left), Box::new(right)),
-        None => left,
+    let (input, (expression1, expression2)) = tuple((parse_term1, opt(parse_less_than)))(input)?;
+    let expression = match expression2 {
+        Some(expression2) => Expression::LessThan(Box::new(expression1), Box::new(expression2)),
+        None => expression1,
     };
     Ok((input, expression))
 }
@@ -41,13 +41,14 @@ fn parse_less_than(input: &str) -> IResult<&str, Expression> {
 fn parse_term1(input: &str) -> IResult<&str, Expression> {
     let (input, (expression, expressions)) = tuple((parse_term2, parse_add_sub))(input)?;
     let expression =
-        expressions
-            .iter()
-            .fold(expression, |left, (operator, right)| match operator {
-                '+' => Expression::Add(Box::new(left), Box::new(right.clone())),
-                '-' => Expression::Sub(Box::new(left), Box::new(right.clone())),
+        expressions.iter().fold(
+            expression,
+            |expression1, (operator, expression2)| match operator {
+                '+' => Expression::Add(Box::new(expression1), Box::new(expression2.clone())),
+                '-' => Expression::Sub(Box::new(expression1), Box::new(expression2.clone())),
                 _ => unreachable!(),
-            });
+            },
+        );
     Ok((input, expression))
 }
 
@@ -62,12 +63,13 @@ fn parse_add_sub(input: &str) -> IResult<&str, Vec<(char, Expression)>> {
 fn parse_term2(input: &str) -> IResult<&str, Expression> {
     let (input, (expression, expressions)) = tuple((parse_factor, parse_mul))(input)?;
     let expression =
-        expressions
-            .iter()
-            .fold(expression, |left, (operator, right)| match operator {
-                '*' => Expression::Mul(Box::new(left), Box::new(right.clone())),
+        expressions.iter().fold(
+            expression,
+            |expression1, (operator, expression2)| match operator {
+                '*' => Expression::Mul(Box::new(expression1), Box::new(expression2.clone())),
                 _ => unreachable!(),
-            });
+            },
+        );
     Ok((input, expression))
 }
 
