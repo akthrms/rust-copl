@@ -16,17 +16,17 @@ impl fmt::Display for Expression {
         use crate::eval_ml1::ast::Expression::*;
 
         match self {
-            Int(n) => write!(f, "{}", n),
+            Int(i) => write!(f, "{}", i),
             Bool(b) => write!(f, "{}", b),
-            If(condition, consequence, alternative) => write!(
+            If(expression1, expression2, expression3) => write!(
                 f,
                 "(if {} then {} else {})",
-                condition, consequence, alternative
+                expression1, expression2, expression3
             ),
-            Plus(left, right) => write!(f, "({} + {})", left, right),
-            Minus(left, right) => write!(f, "({} - {})", left, right),
-            Times(left, right) => write!(f, "({} * {})", left, right),
-            Lt(left, right) => write!(f, "({} < {})", left, right),
+            Plus(expression1, expression2) => write!(f, "({} + {})", expression1, expression2),
+            Minus(expression1, expression2) => write!(f, "({} - {})", expression1, expression2),
+            Times(expression1, expression2) => write!(f, "({} * {})", expression1, expression2),
+            Lt(expression1, expression2) => write!(f, "({} < {})", expression1, expression2),
         }
     }
 }

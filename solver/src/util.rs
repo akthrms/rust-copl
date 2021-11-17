@@ -8,3 +8,7 @@ where
 {
     delimited(multispace0, inner, multispace0)
 }
+
+pub fn ident(depth: usize) -> String {
+    "    ".repeat(depth)
+}

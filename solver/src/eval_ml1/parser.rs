@@ -27,10 +27,10 @@ pub fn parse(input: &str) -> IResult<&str, Expression> {
 }
 
 fn parse_expression(input: &str) -> IResult<&str, Expression> {
-    let (input, (left, right)) = tuple((parse_term1, opt(parse_lt)))(input)?;
-    let expression = match right {
-        Some(right) => Lt(Box::new(left), Box::new(right)),
-        None => left,
+    let (input, (expression1, expression2)) = tuple((parse_term1, opt(parse_lt)))(input)?;
+    let expression = match expression2 {
+        Some(expression2) => Lt(Box::new(expression1), Box::new(expression2)),
+        None => expression1,
     };
     Ok((input, expression))
 }
@@ -43,13 +43,14 @@ fn parse_lt(input: &str) -> IResult<&str, Expression> {
 fn parse_term1(input: &str) -> IResult<&str, Expression> {
     let (input, (expression, expressions)) = tuple((parse_term2, parse_plus_minus))(input)?;
     let expression =
-        expressions
-            .iter()
-            .fold(expression, |left, (operator, right)| match operator {
-                '+' => Plus(Box::new(left), Box::new(right.clone())),
-                '-' => Minus(Box::new(left), Box::new(right.clone())),
+        expressions.iter().fold(
+            expression,
+            |expression1, (operator, expression2)| match operator {
+                '+' => Plus(Box::new(expression1), Box::new(expression2.clone())),
+                '-' => Minus(Box::new(expression1), Box::new(expression2.clone())),
                 _ => unreachable!(),
-            });
+            },
+        );
     Ok((input, expression))
 }
 
@@ -64,12 +65,13 @@ fn parse_plus_minus(input: &str) -> IResult<&str, Vec<(char, Expression)>> {
 fn parse_term2(input: &str) -> IResult<&str, Expression> {
     let (input, (expression, expressions)) = tuple((parse_factor, parse_times))(input)?;
     let expression =
-        expressions
-            .iter()
-            .fold(expression, |left, (operator, right)| match operator {
-                '*' => Times(Box::new(left), Box::new(right.clone())),
+        expressions.iter().fold(
+            expression,
+            |expression1, (operator, expression2)| match operator {
+                '*' => Times(Box::new(expression1), Box::new(expression2.clone())),
                 _ => unreachable!(),
-            });
+            },
+        );
     Ok((input, expression))
 }
 
@@ -90,25 +92,27 @@ fn parse_value(input: &str) -> IResult<&str, Expression> {
 }
 
 fn parse_int(input: &str) -> IResult<&str, Expression> {
-    let (input, n) = alt((ws(parse_pos_number), ws(parse_neg_number)))(input)?;
-    Ok((input, Int(n)))
+    let (input, i) = alt((ws(parse_pos_number), ws(parse_neg_number)))(input)?;
+    let expression = Int(i);
+    Ok((input, expression))
 }
 
 fn parse_pos_number(input: &str) -> IResult<&str, i64> {
-    let (input, n) = digit1(input)?;
-    let n = n.parse::<i64>().unwrap();
-    Ok((input, n))
+    let (input, i) = digit1(input)?;
+    let i = i.parse::<i64>().unwrap();
+    Ok((input, i))
 }
 
 fn parse_neg_number(input: &str) -> IResult<&str, i64> {
-    let (input, n) = recognize(tuple((char('-'), digit1)))(input)?;
-    let n = n.parse::<i64>().unwrap();
-    Ok((input, n))
+    let (input, i) = recognize(tuple((char('-'), digit1)))(input)?;
+    let i = i.parse::<i64>().unwrap();
+    Ok((input, i))
 }
 
 fn parse_bool(input: &str) -> IResult<&str, Expression> {
     let (input, b) = alt((parse_true, parse_false))(input)?;
-    Ok((input, Bool(b)))
+    let expression = Bool(b);
+    Ok((input, expression))
 }
 
 fn parse_true(input: &str) -> IResult<&str, bool> {
@@ -129,7 +133,7 @@ fn parse_paren(input: &str) -> IResult<&str, Expression> {
 }
 
 fn parse_if(input: &str) -> IResult<&str, Expression> {
-    let (input, (_, condition, _, consequence, _, alternative)) = tuple((
+    let (input, (_, expression1, _, expression2, _, expression3)) = tuple((
         ws(tag("if")),
         parse_expression,
         ws(tag("then")),
@@ -138,9 +142,9 @@ fn parse_if(input: &str) -> IResult<&str, Expression> {
         parse_expression,
     ))(input)?;
     let expression = If(
-        Box::new(condition),
-        Box::new(consequence),
-        Box::new(alternative),
+        Box::new(expression1),
+        Box::new(expression2),
+        Box::new(expression3),
     );
     Ok((input, expression))
 }

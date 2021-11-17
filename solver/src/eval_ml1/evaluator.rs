@@ -1,28 +1,28 @@
 use crate::eval_ml1::ast::{Expression, Expression::*};
 
-pub fn evaluate(expression: Expression) -> Expression {
+pub fn eval(expression: Expression) -> Expression {
     match expression {
-        Int(n) => Int(n),
+        Int(i) => Int(i),
         Bool(b) => Bool(b),
-        If(condition, consequence, alternative) => match evaluate(*condition) {
-            Bool(true) => evaluate(*consequence),
-            Bool(false) => evaluate(*alternative),
+        If(expression1, expression2, expression3) => match eval(*expression1) {
+            Bool(true) => eval(*expression2),
+            Bool(false) => eval(*expression3),
             _ => unreachable!(),
         },
-        Plus(left, right) => match (evaluate(*left), evaluate(*right)) {
-            (Int(n), Int(m)) => Int(n + m),
+        Plus(expression1, expression2) => match (eval(*expression1), eval(*expression2)) {
+            (Int(i1), Int(i2)) => Int(i1 + i2),
             _ => unreachable!(),
         },
-        Minus(left, right) => match (evaluate(*left), evaluate(*right)) {
-            (Int(n), Int(m)) => Int(n - m),
+        Minus(expression1, expression2) => match (eval(*expression1), eval(*expression2)) {
+            (Int(i1), Int(i2)) => Int(i1 - i2),
             _ => unreachable!(),
         },
-        Times(left, right) => match (evaluate(*left), evaluate(*right)) {
-            (Int(n), Int(m)) => Int(n * m),
+        Times(expression1, expression2) => match (eval(*expression1), eval(*expression2)) {
+            (Int(i1), Int(i2)) => Int(i1 * i2),
             _ => unreachable!(),
         },
-        Lt(left, right) => match (evaluate(*left), evaluate(*right)) {
-            (Int(n), Int(m)) => Bool(n < m),
+        Lt(expression1, expression2) => match (eval(*expression1), eval(*expression2)) {
+            (Int(i1), Int(i2)) => Bool(i1 < i2),
             _ => unreachable!(),
         },
     }
@@ -30,43 +30,43 @@ pub fn evaluate(expression: Expression) -> Expression {
 
 #[cfg(test)]
 mod tests {
-    use crate::eval_ml1::{ast::Expression::*, evaluator::evaluate, parser::parse};
+    use crate::eval_ml1::{ast::Expression::*, evaluator::eval, parser::parse};
 
     #[test]
-    fn test_evaluate1() {
-        assert_eq!(evaluate(parse("3 + 5").unwrap().1), Int(8));
+    fn test_eval1() {
+        assert_eq!(eval(parse("3 + 5").unwrap().1), Int(8));
     }
 
     #[test]
-    fn test_evaluate2() {
-        assert_eq!(evaluate(parse("8 - 2 - 3").unwrap().1), Int(3));
+    fn test_eval2() {
+        assert_eq!(eval(parse("8 - 2 - 3").unwrap().1), Int(3));
     }
 
     #[test]
-    fn test_evaluate3() {
-        assert_eq!(evaluate(parse("(4 + 5) * (1 - 10)").unwrap().1), Int(-81));
+    fn test_eval3() {
+        assert_eq!(eval(parse("(4 + 5) * (1 - 10)").unwrap().1), Int(-81));
     }
 
     #[test]
-    fn test_evaluate4() {
+    fn test_eval4() {
         assert_eq!(
-            evaluate(parse("if 4 < 5 then 2 + 3 else 8 * 8").unwrap().1),
+            eval(parse("if 4 < 5 then 2 + 3 else 8 * 8").unwrap().1),
             Int(5)
         );
     }
 
     #[test]
-    fn test_evaluate5() {
+    fn test_eval5() {
         assert_eq!(
-            evaluate(parse("3 + if -23 < -2 * 8 then 8 else 2 + 4").unwrap().1),
+            eval(parse("3 + if -23 < -2 * 8 then 8 else 2 + 4").unwrap().1),
             Int(11)
         );
     }
 
     #[test]
-    fn test_evaluate6() {
+    fn test_eval6() {
         assert_eq!(
-            evaluate(parse("3 + (if -23 < -2 * 8 then 8 else 2) + 4").unwrap().1),
+            eval(parse("3 + (if -23 < -2 * 8 then 8 else 2) + 4").unwrap().1),
             Int(15)
         );
     }
