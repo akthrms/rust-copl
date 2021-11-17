@@ -39,7 +39,7 @@ pub fn solve(expression: &Expression, depth: usize) -> Rule {
             let rule1 = solve(expression1, depth + 1);
             let rule2 = solve(expression2, depth + 1);
             let expression3 = match (rule1.evaluated(), rule2.evaluated()) {
-                (Int(n), Int(m)) => Int(n + m),
+                (Int(i1), Int(i2)) => Int(i1 + i2),
                 _ => unreachable!(),
             };
             let rule3 = BPlus(rule1.evaluated(), rule2.evaluated(), expression3, depth + 1);
@@ -56,7 +56,7 @@ pub fn solve(expression: &Expression, depth: usize) -> Rule {
             let rule1 = solve(expression1, depth + 1);
             let rule2 = solve(expression2, depth + 1);
             let expression3 = match (rule1.evaluated(), rule2.evaluated()) {
-                (Int(n), Int(m)) => Int(n - m),
+                (Int(i1), Int(i2)) => Int(i1 - i2),
                 _ => unreachable!(),
             };
             let rule3 = BMinus(rule1.evaluated(), rule2.evaluated(), expression3, depth + 1);
@@ -73,7 +73,7 @@ pub fn solve(expression: &Expression, depth: usize) -> Rule {
             let rule1 = solve(expression1, depth + 1);
             let rule2 = solve(expression2, depth + 1);
             let expression3 = match (rule1.evaluated(), rule2.evaluated()) {
-                (Int(n), Int(m)) => Int(n * m),
+                (Int(i1), Int(i2)) => Int(i1 * i2),
                 _ => unreachable!(),
             };
             let rule3 = BTimes(rule1.evaluated(), rule2.evaluated(), expression3, depth + 1);
@@ -90,7 +90,7 @@ pub fn solve(expression: &Expression, depth: usize) -> Rule {
             let rule1 = solve(expression1, depth + 1);
             let rule2 = solve(expression2, depth + 1);
             let expression3 = match (rule1.evaluated(), rule2.evaluated()) {
-                (Int(n), Int(m)) => Bool(n < m),
+                (Int(i1), Int(i2)) => Bool(i1 < i2),
                 _ => unreachable!(),
             };
             let rule3 = BLt(rule1.evaluated(), rule2.evaluated(), expression3, depth + 1);
