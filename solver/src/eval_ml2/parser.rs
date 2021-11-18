@@ -15,12 +15,14 @@ use nom::{
 // <expression> ::= <term1> [ <' <term1> ]
 // <term1> ::= <term2> [ ( '+' | '-' ) <term2> ]*
 // <term2> ::= <factor> [ '*' <factor> ]*
-// <factor> ::= <value> | <paren> | <if>
+// <factor> ::= <value> | <paren> | <if> | <let> | <var>
 // <value> ::= <int> | <bool>
 // <int> ::= 数値
 // <bool> ::= 'true' | 'false'
 // <paren> ::= '(' <expression> ')'
 // <if> ::= 'if' <expression> 'then' <expression> 'else' <expression>
+// <let> ::= 'let' <var> '=' <expression> 'in' <expression>
+// <var> ::= 文字列 | 数値
 
 pub fn parse(input: &str) -> IResult<&str, (Environment, Expression)> {
     match input.find("|-") {
@@ -38,35 +40,34 @@ pub fn parse(input: &str) -> IResult<&str, (Environment, Expression)> {
 }
 
 fn parse_environment(input: &str) -> IResult<&str, Environment> {
-    let (input, var) = opt(parse_var)(input)?;
-    let var = match var {
-        Some(var) => var,
+    let (input, pair) = opt(parse_pair)(input)?;
+    let pair = match pair {
+        Some(pair) => pair,
         None => return Ok((input, Environment::empty())),
     };
-    let (input, vars) = opt(parse_vars)(input)?;
-    let vars = match vars {
-        Some(mut vars) => {
-            vars.insert(0, var);
-            vars
+    let (input, pairs) = opt(parse_pairs)(input)?;
+    let pairs = match pairs {
+        Some(mut pairs) => {
+            pairs.insert(0, pair);
+            pairs
         }
-        None => vec![var],
+        None => vec![pair],
     };
-    let environment = Environment::new(vars);
+    let environment = Environment::new(pairs);
     Ok((input, environment))
 }
 
-fn parse_var(input: &str) -> IResult<&str, (String, Expression)> {
-    let parse_name = ws(alphanumeric1);
-    let parse_equal = ws(char('='));
-    let (input, (name, _, expression)) = tuple((parse_name, parse_equal, parse_expression))(input)?;
-    let var = (name.to_string(), expression);
-    Ok((input, var))
+fn parse_pair(input: &str) -> IResult<&str, (Expression, Expression)> {
+    let (input, (expression1, _, expression2)) =
+        tuple((parse_var, ws(char('=')), parse_expression))(input)?;
+    let pair = (expression1, expression2);
+    Ok((input, pair))
 }
 
-fn parse_vars(input: &str) -> IResult<&str, Vec<(String, Expression)>> {
-    let (input, vars) = many0(tuple((ws(char(',')), parse_var)))(input)?;
-    let vars = vars.into_iter().map(|(_, var)| var).collect();
-    Ok((input, vars))
+fn parse_pairs(input: &str) -> IResult<&str, Vec<(Expression, Expression)>> {
+    let (input, pairs) = many0(tuple((ws(char(',')), parse_pair)))(input)?;
+    let pairs = pairs.into_iter().map(|(_, pair)| pair).collect();
+    Ok((input, pairs))
 }
 
 fn parse_expression(input: &str) -> IResult<&str, Expression> {
@@ -125,7 +126,8 @@ fn parse_times(input: &str) -> IResult<&str, Vec<(char, Expression)>> {
 }
 
 fn parse_factor(input: &str) -> IResult<&str, Expression> {
-    let (input, expression) = alt((parse_value, parse_paren, parse_if))(input)?;
+    let (input, expression) =
+        alt((parse_value, parse_paren, parse_if, parse_let, parse_var))(input)?;
     Ok((input, expression))
 }
 
@@ -189,6 +191,29 @@ fn parse_if(input: &str) -> IResult<&str, Expression> {
         Box::new(expression2),
         Box::new(expression3),
     );
+    Ok((input, expression))
+}
+
+fn parse_let(input: &str) -> IResult<&str, Expression> {
+    let (input, (_, expression1, _, expression2, _, expression3)) = tuple((
+        ws(tag("let")),
+        parse_var,
+        ws(char('=')),
+        parse_expression,
+        ws(tag("in")),
+        parse_expression,
+    ))(input)?;
+    let expression = Let(
+        Box::new(expression1),
+        Box::new(expression2),
+        Box::new(expression3),
+    );
+    Ok((input, expression))
+}
+
+fn parse_var(input: &str) -> IResult<&str, Expression> {
+    let (input, s) = ws(alphanumeric1)(input)?;
+    let expression = Var(s.to_string());
     Ok((input, expression))
 }
 
@@ -293,6 +318,97 @@ mod tests {
                         ))
                     )),
                     Box::new(Int(4))
+                )
+            )
+        );
+    }
+
+    #[test]
+    fn test_parse7() {
+        assert_eq!(
+            parse("x = 3, y = 2 |- x").unwrap().1,
+            (
+                Environment::new(vec![
+                    (Var("x".to_string()), Int(3)),
+                    (Var("y".to_string()), Int(2))
+                ]),
+                Var("x".to_string())
+            )
+        );
+    }
+
+    #[test]
+    fn test_parse8() {
+        assert_eq!(
+            parse("x = true, y = 4 |- if x then y + 1 else y")
+                .unwrap()
+                .1,
+            (
+                Environment::new(vec![
+                    (Var("x".to_string()), Bool(true)),
+                    (Var("y".to_string()), Int(4))
+                ]),
+                If(
+                    Box::new(Var("x".to_string())),
+                    Box::new(Plus(Box::new(Var("y".to_string())), Box::new(Int(1)))),
+                    Box::new(Var("y".to_string()))
+                )
+            )
+        );
+    }
+
+    #[test]
+    fn test_parse9() {
+        assert_eq!(
+            parse("|- let x = 1 + 2 in x * 4").unwrap().1,
+            (
+                Environment::empty(),
+                Let(
+                    Box::new(Var("x".to_string())),
+                    Box::new(Plus(Box::new(Int(1)), Box::new(Int(2)))),
+                    Box::new(Times(Box::new(Var("x".to_string())), Box::new(Int(4))))
+                )
+            )
+        );
+    }
+
+    #[test]
+    fn test_parse10() {
+        assert_eq!(
+            parse("|- let x = 3 * 3 in let y = 4 * x in x + y")
+                .unwrap()
+                .1,
+            (
+                Environment::empty(),
+                Let(
+                    Box::new(Var("x".to_string())),
+                    Box::new(Times(Box::new(Int(3)), Box::new(Int(3)))),
+                    Box::new(Let(
+                        Box::new(Var("y".to_string())),
+                        Box::new(Times(Box::new(Int(4)), Box::new(Var("x".to_string())))),
+                        Box::new(Plus(
+                            Box::new(Var("x".to_string())),
+                            Box::new(Var("y".to_string()))
+                        ))
+                    ))
+                )
+            )
+        );
+    }
+
+    #[test]
+    fn test_parse11() {
+        assert_eq!(
+            parse("x = 3 |- let x = x * 2 in x + x").unwrap().1,
+            (
+                Environment::new(vec![(Var("x".to_string()), Int(3))]),
+                Let(
+                    Box::new(Var("x".to_string())),
+                    Box::new(Times(Box::new(Var("x".to_string())), Box::new(Int(2)))),
+                    Box::new(Plus(
+                        Box::new(Var("x".to_string())),
+                        Box::new(Var("x".to_string()))
+                    )),
                 )
             )
         );

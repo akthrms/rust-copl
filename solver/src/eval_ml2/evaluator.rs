@@ -25,6 +25,7 @@ pub fn eval(expression: Expression) -> Expression {
             (Int(i1), Int(i2)) => Bool(i1 < i2),
             _ => unreachable!(),
         },
+        _ => unimplemented!(),
     }
 }
 

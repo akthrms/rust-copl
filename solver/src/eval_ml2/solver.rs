@@ -103,6 +103,7 @@ pub fn solve(expression: &Expression, depth: usize) -> Rule {
                 depth,
             )
         }
+        _ => unimplemented!(),
     }
 }
 
