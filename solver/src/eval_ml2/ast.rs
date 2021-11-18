@@ -30,3 +30,16 @@ impl fmt::Display for Expression {
         }
     }
 }
+
+#[derive(Clone, Debug, PartialEq, PartialOrd)]
+pub struct Environment(Vec<(String, Expression)>);
+
+impl Environment {
+    pub fn new(vars: Vec<(String, Expression)>) -> Environment {
+        Environment(vars)
+    }
+
+    pub fn empty() -> Environment {
+        Environment(vec![])
+    }
+}

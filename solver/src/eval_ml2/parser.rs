@@ -1,11 +1,11 @@
 use crate::{
-    eval_ml2::ast::{Expression, Expression::*},
+    eval_ml2::ast::{Environment, Expression, Expression::*},
     util::ws,
 };
 use nom::{
     branch::alt,
     bytes::complete::tag,
-    character::complete::{char, digit1},
+    character::complete::{alphanumeric1, char, digit1},
     combinator::{opt, recognize},
     multi::many0,
     sequence::{delimited, tuple},
@@ -22,8 +22,51 @@ use nom::{
 // <paren> ::= '(' <expression> ')'
 // <if> ::= 'if' <expression> 'then' <expression> 'else' <expression>
 
-pub fn parse(input: &str) -> IResult<&str, Expression> {
-    parse_expression(input)
+pub fn parse(input: &str) -> IResult<&str, (Environment, Expression)> {
+    match input.find("|-") {
+        Some(i) => {
+            let (environment_input, expression_input) = input.split_at(i);
+            let (_, environment) = parse_environment(environment_input)?;
+            let (input, expression) = parse_expression(&expression_input[2..])?;
+            Ok((input, (environment, expression)))
+        }
+        None => {
+            let (input, expression) = parse_expression(input)?;
+            Ok((input, (Environment::empty(), expression)))
+        }
+    }
+}
+
+fn parse_environment(input: &str) -> IResult<&str, Environment> {
+    let (input, var) = opt(parse_var)(input)?;
+    let var = match var {
+        Some(var) => var,
+        None => return Ok((input, Environment::empty())),
+    };
+    let (input, vars) = opt(parse_vars)(input)?;
+    let vars = match vars {
+        Some(mut vars) => {
+            vars.insert(0, var);
+            vars
+        }
+        None => vec![var],
+    };
+    let environment = Environment::new(vars);
+    Ok((input, environment))
+}
+
+fn parse_var(input: &str) -> IResult<&str, (String, Expression)> {
+    let parse_name = ws(alphanumeric1);
+    let parse_equal = ws(char('='));
+    let (input, (name, _, expression)) = tuple((parse_name, parse_equal, parse_expression))(input)?;
+    let var = (name.to_string(), expression);
+    Ok((input, var))
+}
+
+fn parse_vars(input: &str) -> IResult<&str, Vec<(String, Expression)>> {
+    let (input, vars) = many0(tuple((ws(char(',')), parse_var)))(input)?;
+    let vars = vars.into_iter().map(|(_, var)| var).collect();
+    Ok((input, vars))
 }
 
 fn parse_expression(input: &str) -> IResult<&str, Expression> {
@@ -151,13 +194,19 @@ fn parse_if(input: &str) -> IResult<&str, Expression> {
 
 #[cfg(test)]
 mod tests {
-    use crate::eval_ml2::{ast::Expression::*, parser::parse};
+    use crate::eval_ml2::{
+        ast::{Environment, Expression::*},
+        parser::parse,
+    };
 
     #[test]
     fn test_parse1() {
         assert_eq!(
             parse("3 + 5").unwrap().1,
-            Plus(Box::new(Int(3)), Box::new(Int(5)))
+            (
+                Environment::empty(),
+                Plus(Box::new(Int(3)), Box::new(Int(5)))
+            )
         );
     }
 
@@ -165,9 +214,12 @@ mod tests {
     fn test_parse2() {
         assert_eq!(
             parse("8 - 2 - 3").unwrap().1,
-            Minus(
-                Box::new(Minus(Box::new(Int(8)), Box::new(Int(2)))),
-                Box::new(Int(3))
+            (
+                Environment::empty(),
+                Minus(
+                    Box::new(Minus(Box::new(Int(8)), Box::new(Int(2)))),
+                    Box::new(Int(3))
+                )
             )
         );
     }
@@ -176,9 +228,12 @@ mod tests {
     fn test_parse3() {
         assert_eq!(
             parse("(4 + 5) * (1 - 10)").unwrap().1,
-            Times(
-                Box::new(Plus(Box::new(Int(4)), Box::new(Int(5)))),
-                Box::new(Minus(Box::new(Int(1)), Box::new(Int(10))))
+            (
+                Environment::empty(),
+                Times(
+                    Box::new(Plus(Box::new(Int(4)), Box::new(Int(5)))),
+                    Box::new(Minus(Box::new(Int(1)), Box::new(Int(10))))
+                )
             )
         );
     }
@@ -187,10 +242,13 @@ mod tests {
     fn test_parse4() {
         assert_eq!(
             parse("if 4 < 5 then 2 + 3 else 8 * 8").unwrap().1,
-            If(
-                Box::new(Lt(Box::new(Int(4)), Box::new(Int(5)))),
-                Box::new(Plus(Box::new(Int(2)), Box::new(Int(3)))),
-                Box::new(Times(Box::new(Int(8)), Box::new(Int(8))))
+            (
+                Environment::empty(),
+                If(
+                    Box::new(Lt(Box::new(Int(4)), Box::new(Int(5)))),
+                    Box::new(Plus(Box::new(Int(2)), Box::new(Int(3)))),
+                    Box::new(Times(Box::new(Int(8)), Box::new(Int(8))))
+                )
             )
         );
     }
@@ -199,16 +257,19 @@ mod tests {
     fn test_parse5() {
         assert_eq!(
             parse("3 + if -23 < -2 * 8 then 8 else 2 + 4").unwrap().1,
-            Plus(
-                Box::new(Int(3)),
-                Box::new(If(
-                    Box::new(Lt(
-                        Box::new(Int(-23)),
-                        Box::new(Times(Box::new(Int(-2)), Box::new(Int(8))))
-                    )),
-                    Box::new(Int(8)),
-                    Box::new(Plus(Box::new(Int(2)), Box::new(Int(4))))
-                ))
+            (
+                Environment::empty(),
+                Plus(
+                    Box::new(Int(3)),
+                    Box::new(If(
+                        Box::new(Lt(
+                            Box::new(Int(-23)),
+                            Box::new(Times(Box::new(Int(-2)), Box::new(Int(8))))
+                        )),
+                        Box::new(Int(8)),
+                        Box::new(Plus(Box::new(Int(2)), Box::new(Int(4))))
+                    ))
+                )
             )
         );
     }
@@ -217,19 +278,22 @@ mod tests {
     fn test_parse6() {
         assert_eq!(
             parse("3 + (if -23 < -2 * 8 then 8 else 2) + 4").unwrap().1,
-            Plus(
-                Box::new(Plus(
-                    Box::new(Int(3)),
-                    Box::new(If(
-                        Box::new(Lt(
-                            Box::new(Int(-23)),
-                            Box::new(Times(Box::new(Int(-2)), Box::new(Int(8))))
-                        )),
-                        Box::new(Int(8)),
-                        Box::new(Int(2))
-                    ))
-                )),
-                Box::new(Int(4))
+            (
+                Environment::empty(),
+                Plus(
+                    Box::new(Plus(
+                        Box::new(Int(3)),
+                        Box::new(If(
+                            Box::new(Lt(
+                                Box::new(Int(-23)),
+                                Box::new(Times(Box::new(Int(-2)), Box::new(Int(8))))
+                            )),
+                            Box::new(Int(8)),
+                            Box::new(Int(2))
+                        ))
+                    )),
+                    Box::new(Int(4))
+                )
             )
         );
     }

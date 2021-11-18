@@ -30,27 +30,43 @@ pub fn eval(expression: Expression) -> Expression {
 
 #[cfg(test)]
 mod tests {
-    use crate::eval_ml2::{ast::Expression::*, evaluator::eval, parser::parse};
+    use crate::eval_ml2::{ast::Expression::*, evaluator::eval};
 
     #[test]
     fn test_eval1() {
-        assert_eq!(eval(parse("3 + 5").unwrap().1), Int(8));
+        assert_eq!(eval(Plus(Box::new(Int(3)), Box::new(Int(5)))), Int(8));
     }
 
     #[test]
     fn test_eval2() {
-        assert_eq!(eval(parse("8 - 2 - 3").unwrap().1), Int(3));
+        assert_eq!(
+            eval(Minus(
+                Box::new(Minus(Box::new(Int(8)), Box::new(Int(2)))),
+                Box::new(Int(3))
+            )),
+            Int(3)
+        );
     }
 
     #[test]
     fn test_eval3() {
-        assert_eq!(eval(parse("(4 + 5) * (1 - 10)").unwrap().1), Int(-81));
+        assert_eq!(
+            eval(Times(
+                Box::new(Plus(Box::new(Int(4)), Box::new(Int(5)))),
+                Box::new(Minus(Box::new(Int(1)), Box::new(Int(10))))
+            )),
+            Int(-81)
+        );
     }
 
     #[test]
     fn test_eval4() {
         assert_eq!(
-            eval(parse("if 4 < 5 then 2 + 3 else 8 * 8").unwrap().1),
+            eval(If(
+                Box::new(Lt(Box::new(Int(4)), Box::new(Int(5)))),
+                Box::new(Plus(Box::new(Int(2)), Box::new(Int(3)))),
+                Box::new(Times(Box::new(Int(8)), Box::new(Int(8))))
+            )),
             Int(5)
         );
     }
@@ -58,7 +74,17 @@ mod tests {
     #[test]
     fn test_eval5() {
         assert_eq!(
-            eval(parse("3 + if -23 < -2 * 8 then 8 else 2 + 4").unwrap().1),
+            eval(Plus(
+                Box::new(Int(3)),
+                Box::new(If(
+                    Box::new(Lt(
+                        Box::new(Int(-23)),
+                        Box::new(Times(Box::new(Int(-2)), Box::new(Int(8))))
+                    )),
+                    Box::new(Int(8)),
+                    Box::new(Plus(Box::new(Int(2)), Box::new(Int(4))))
+                ))
+            )),
             Int(11)
         );
     }
@@ -66,7 +92,20 @@ mod tests {
     #[test]
     fn test_eval6() {
         assert_eq!(
-            eval(parse("3 + (if -23 < -2 * 8 then 8 else 2) + 4").unwrap().1),
+            eval(Plus(
+                Box::new(Plus(
+                    Box::new(Int(3)),
+                    Box::new(If(
+                        Box::new(Lt(
+                            Box::new(Int(-23)),
+                            Box::new(Times(Box::new(Int(-2)), Box::new(Int(8))))
+                        )),
+                        Box::new(Int(8)),
+                        Box::new(Int(2))
+                    ))
+                )),
+                Box::new(Int(4))
+            )),
             Int(15)
         );
     }
