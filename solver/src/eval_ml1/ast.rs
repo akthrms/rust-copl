@@ -1,32 +1,28 @@
 use std::fmt;
 
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
-pub enum Expression {
+pub enum Expr {
     Int(i64),
     Bool(bool),
-    If(Box<Expression>, Box<Expression>, Box<Expression>),
-    Plus(Box<Expression>, Box<Expression>),
-    Minus(Box<Expression>, Box<Expression>),
-    Times(Box<Expression>, Box<Expression>),
-    Lt(Box<Expression>, Box<Expression>),
+    If(Box<Expr>, Box<Expr>, Box<Expr>),
+    Plus(Box<Expr>, Box<Expr>),
+    Minus(Box<Expr>, Box<Expr>),
+    Times(Box<Expr>, Box<Expr>),
+    Lt(Box<Expr>, Box<Expr>),
 }
 
-impl fmt::Display for Expression {
+impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        use crate::eval_ml1::ast::Expression::*;
+        use crate::eval_ml1::ast::Expr::*;
 
         match self {
             Int(i) => write!(f, "{}", i),
             Bool(b) => write!(f, "{}", b),
-            If(expression1, expression2, expression3) => write!(
-                f,
-                "(if {} then {} else {})",
-                expression1, expression2, expression3
-            ),
-            Plus(expression1, expression2) => write!(f, "({} + {})", expression1, expression2),
-            Minus(expression1, expression2) => write!(f, "({} - {})", expression1, expression2),
-            Times(expression1, expression2) => write!(f, "({} * {})", expression1, expression2),
-            Lt(expression1, expression2) => write!(f, "({} < {})", expression1, expression2),
+            If(expr1, expr2, expr3) => write!(f, "(if {} then {} else {})", expr1, expr2, expr3),
+            Plus(expr1, expr2) => write!(f, "({} + {})", expr1, expr2),
+            Minus(expr1, expr2) => write!(f, "({} - {})", expr1, expr2),
+            Times(expr1, expr2) => write!(f, "({} * {})", expr1, expr2),
+            Lt(expr1, expr2) => write!(f, "({} < {})", expr1, expr2),
         }
     }
 }

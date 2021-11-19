@@ -1,5 +1,5 @@
 use crate::{
-    eval_ml1::ast::{Expression, Expression::*},
+    eval_ml1::ast::{Expr, Expr::*},
     util::ws,
 };
 use nom::{
@@ -12,89 +12,81 @@ use nom::{
     IResult,
 };
 
-// <expression> ::= <term1> [ <' <term1> ]
+// <expr> ::= <term1> [ <' <term1> ]
 // <term1> ::= <term2> [ ( '+' | '-' ) <term2> ]*
 // <term2> ::= <factor> [ '*' <factor> ]*
 // <factor> ::= <value> | <paren> | <if>
 // <value> ::= <int> | <bool>
 // <int> ::= 数値
 // <bool> ::= 'true' | 'false'
-// <paren> ::= '(' <expression> ')'
-// <if> ::= 'if' <expression> 'then' <expression> 'else' <expression>
+// <paren> ::= '(' <expr> ')'
+// <if> ::= 'if' <expr> 'then' <expr> 'else' <expr>
 
-pub fn parse(input: &str) -> IResult<&str, Expression> {
-    parse_expression(input)
+pub fn parse(input: &str) -> IResult<&str, Expr> {
+    parse_expr(input)
 }
 
-fn parse_expression(input: &str) -> IResult<&str, Expression> {
-    let (input, (expression1, expression2)) = tuple((parse_term1, opt(parse_lt)))(input)?;
-    let expression = match expression2 {
-        Some(expression2) => Lt(Box::new(expression1), Box::new(expression2)),
-        None => expression1,
+fn parse_expr(input: &str) -> IResult<&str, Expr> {
+    let (input, (expr1, expr2)) = tuple((parse_term1, opt(parse_lt)))(input)?;
+    let expr = match expr2 {
+        Some(expr2) => Lt(Box::new(expr1), Box::new(expr2)),
+        None => expr1,
     };
-    Ok((input, expression))
+    Ok((input, expr))
 }
 
-fn parse_lt(input: &str) -> IResult<&str, Expression> {
-    let (input, (_, expression)) = tuple((ws(char('<')), parse_term1))(input)?;
-    Ok((input, expression))
+fn parse_lt(input: &str) -> IResult<&str, Expr> {
+    let (input, (_, expr)) = tuple((ws(char('<')), parse_term1))(input)?;
+    Ok((input, expr))
 }
 
-fn parse_term1(input: &str) -> IResult<&str, Expression> {
-    let (input, (expression, expressions)) = tuple((parse_term2, parse_plus_minus))(input)?;
-    let expression =
-        expressions.iter().fold(
-            expression,
-            |expression1, (operator, expression2)| match operator {
-                '+' => Plus(Box::new(expression1), Box::new(expression2.clone())),
-                '-' => Minus(Box::new(expression1), Box::new(expression2.clone())),
-                _ => unreachable!(),
-            },
-        );
-    Ok((input, expression))
+fn parse_term1(input: &str) -> IResult<&str, Expr> {
+    let (input, (expr, exprs)) = tuple((parse_term2, parse_plus_minus))(input)?;
+    let expr = exprs.iter().fold(expr, |expr1, (op, expr2)| match op {
+        '+' => Plus(Box::new(expr1), Box::new(expr2.clone())),
+        '-' => Minus(Box::new(expr1), Box::new(expr2.clone())),
+        _ => unreachable!(),
+    });
+    Ok((input, expr))
 }
 
-fn parse_plus_minus(input: &str) -> IResult<&str, Vec<(char, Expression)>> {
+fn parse_plus_minus(input: &str) -> IResult<&str, Vec<(char, Expr)>> {
     let parse_plus = ws(char('+'));
     let parse_minus = ws(char('-'));
-    let parse_operator = alt((parse_plus, parse_minus));
-    let (input, expressions) = many0(tuple((parse_operator, parse_term2)))(input)?;
-    Ok((input, expressions))
+    let parse_op = alt((parse_plus, parse_minus));
+    let (input, exprs) = many0(tuple((parse_op, parse_term2)))(input)?;
+    Ok((input, exprs))
 }
 
-fn parse_term2(input: &str) -> IResult<&str, Expression> {
-    let (input, (expression, expressions)) = tuple((parse_factor, parse_times))(input)?;
-    let expression =
-        expressions.iter().fold(
-            expression,
-            |expression1, (operator, expression2)| match operator {
-                '*' => Times(Box::new(expression1), Box::new(expression2.clone())),
-                _ => unreachable!(),
-            },
-        );
-    Ok((input, expression))
+fn parse_term2(input: &str) -> IResult<&str, Expr> {
+    let (input, (expr, exprs)) = tuple((parse_factor, parse_times))(input)?;
+    let expr = exprs.iter().fold(expr, |expr1, (op, expr2)| match op {
+        '*' => Times(Box::new(expr1), Box::new(expr2.clone())),
+        _ => unreachable!(),
+    });
+    Ok((input, expr))
 }
 
-fn parse_times(input: &str) -> IResult<&str, Vec<(char, Expression)>> {
+fn parse_times(input: &str) -> IResult<&str, Vec<(char, Expr)>> {
     let parse_times = ws(char('*'));
-    let (input, expressions) = many0(tuple((parse_times, parse_factor)))(input)?;
-    Ok((input, expressions))
+    let (input, exprs) = many0(tuple((parse_times, parse_factor)))(input)?;
+    Ok((input, exprs))
 }
 
-fn parse_factor(input: &str) -> IResult<&str, Expression> {
-    let (input, expression) = alt((parse_value, parse_paren, parse_if))(input)?;
-    Ok((input, expression))
+fn parse_factor(input: &str) -> IResult<&str, Expr> {
+    let (input, expr) = alt((parse_value, parse_paren, parse_if))(input)?;
+    Ok((input, expr))
 }
 
-fn parse_value(input: &str) -> IResult<&str, Expression> {
-    let (input, expression) = alt((parse_int, parse_bool))(input)?;
-    Ok((input, expression))
+fn parse_value(input: &str) -> IResult<&str, Expr> {
+    let (input, expr) = alt((parse_int, parse_bool))(input)?;
+    Ok((input, expr))
 }
 
-fn parse_int(input: &str) -> IResult<&str, Expression> {
+fn parse_int(input: &str) -> IResult<&str, Expr> {
     let (input, i) = alt((ws(parse_pos_number), ws(parse_neg_number)))(input)?;
-    let expression = Int(i);
-    Ok((input, expression))
+    let expr = Int(i);
+    Ok((input, expr))
 }
 
 fn parse_pos_number(input: &str) -> IResult<&str, i64> {
@@ -109,10 +101,10 @@ fn parse_neg_number(input: &str) -> IResult<&str, i64> {
     Ok((input, i))
 }
 
-fn parse_bool(input: &str) -> IResult<&str, Expression> {
+fn parse_bool(input: &str) -> IResult<&str, Expr> {
     let (input, b) = alt((parse_true, parse_false))(input)?;
-    let expression = Bool(b);
-    Ok((input, expression))
+    let expr = Bool(b);
+    Ok((input, expr))
 }
 
 fn parse_true(input: &str) -> IResult<&str, bool> {
@@ -125,33 +117,29 @@ fn parse_false(input: &str) -> IResult<&str, bool> {
     Ok((input, false))
 }
 
-fn parse_paren(input: &str) -> IResult<&str, Expression> {
+fn parse_paren(input: &str) -> IResult<&str, Expr> {
     let parse_lparen = ws(char('('));
     let parse_rparen = ws(char(')'));
-    let (input, expression) = delimited(parse_lparen, parse_expression, parse_rparen)(input)?;
-    Ok((input, expression))
+    let (input, expr) = delimited(parse_lparen, parse_expr, parse_rparen)(input)?;
+    Ok((input, expr))
 }
 
-fn parse_if(input: &str) -> IResult<&str, Expression> {
-    let (input, (_, expression1, _, expression2, _, expression3)) = tuple((
+fn parse_if(input: &str) -> IResult<&str, Expr> {
+    let (input, (_, expr1, _, expr2, _, expr3)) = tuple((
         ws(tag("if")),
-        parse_expression,
+        parse_expr,
         ws(tag("then")),
-        parse_expression,
+        parse_expr,
         ws(tag("else")),
-        parse_expression,
+        parse_expr,
     ))(input)?;
-    let expression = If(
-        Box::new(expression1),
-        Box::new(expression2),
-        Box::new(expression3),
-    );
-    Ok((input, expression))
+    let expr = If(Box::new(expr1), Box::new(expr2), Box::new(expr3));
+    Ok((input, expr))
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::eval_ml1::{ast::Expression::*, parser::parse};
+    use crate::eval_ml1::{ast::Expr::*, parser::parse};
 
     #[test]
     fn test_parse1() {
