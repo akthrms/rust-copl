@@ -45,26 +45,48 @@ impl fmt::Display for Expression {
 pub struct Environment(Vec<(Expression, Expression)>);
 
 impl Environment {
-    pub fn new(pairs: Vec<(Expression, Expression)>) -> Environment {
-        Environment(pairs)
-    }
-
-    pub fn empty() -> Environment {
+    pub fn new() -> Environment {
         Environment(vec![])
     }
 
-    pub fn unwrap(&self) -> Vec<(Expression, Expression)> {
-        self.0.clone()
+    pub fn put(&mut self, expression1: Expression, expression2: Expression) {
+        self.0.insert(0, (expression1, expression2))
+    }
+
+    pub fn get(&self, expression: &Expression) -> Expression {
+        self.0
+            .iter()
+            .find(|(expression1, _)| expression1 == expression)
+            .unwrap()
+            .1
+            .clone()
     }
 }
 
 impl fmt::Display for Environment {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let vars = self
-            .unwrap()
-            .into_iter()
+        let pairs = self
+            .0
+            .iter()
+            .rev()
             .map(|(expression1, expression2)| format!("{} = {}", expression1, expression2))
             .collect::<Vec<String>>();
-        write!(f, "{}", vars.join(", "))
+        write!(f, "{}", pairs.join(", "))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::eval_ml2::ast::{Environment, Expression::*};
+
+    #[test]
+    fn test_environment() {
+        let mut environment = Environment::new();
+        environment.put(Var("x".to_string()), Int(1));
+        environment.put(Var("y".to_string()), Int(2));
+        environment.put(Var("x".to_string()), Int(3));
+        assert_eq!("x = 1, y = 2, x = 3", environment.to_string());
+        assert_eq!(Int(3), environment.get(&Var("x".to_string())));
+        assert_eq!(Int(2), environment.get(&Var("y".to_string())));
     }
 }

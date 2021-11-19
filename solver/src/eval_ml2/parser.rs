@@ -34,26 +34,24 @@ pub fn parse(input: &str) -> IResult<&str, (Environment, Expression)> {
         }
         None => {
             let (input, expression) = parse_expression(input)?;
-            Ok((input, (Environment::empty(), expression)))
+            Ok((input, (Environment::new(), expression)))
         }
     }
 }
 
 fn parse_environment(input: &str) -> IResult<&str, Environment> {
+    let mut environment = Environment::new();
     let (input, pair) = opt(parse_pair)(input)?;
-    let pair = match pair {
-        Some(pair) => pair,
-        None => return Ok((input, Environment::empty())),
+    match pair {
+        Some((expression1, expression2)) => environment.put(expression1, expression2),
+        None => return Ok((input, environment)),
     };
     let (input, pairs) = opt(parse_pairs)(input)?;
-    let pairs = match pairs {
-        Some(mut pairs) => {
-            pairs.insert(0, pair);
-            pairs
-        }
-        None => vec![pair],
-    };
-    let environment = Environment::new(pairs);
+    if let Some(pairs) = pairs {
+        pairs
+            .into_iter()
+            .for_each(|(expression1, expression2)| environment.put(expression1, expression2));
+    }
     Ok((input, environment))
 }
 
@@ -228,10 +226,7 @@ mod tests {
     fn test_parse1() {
         assert_eq!(
             parse("3 + 5").unwrap().1,
-            (
-                Environment::empty(),
-                Plus(Box::new(Int(3)), Box::new(Int(5)))
-            )
+            (Environment::new(), Plus(Box::new(Int(3)), Box::new(Int(5))))
         );
     }
 
@@ -240,7 +235,7 @@ mod tests {
         assert_eq!(
             parse("8 - 2 - 3").unwrap().1,
             (
-                Environment::empty(),
+                Environment::new(),
                 Minus(
                     Box::new(Minus(Box::new(Int(8)), Box::new(Int(2)))),
                     Box::new(Int(3))
@@ -254,7 +249,7 @@ mod tests {
         assert_eq!(
             parse("(4 + 5) * (1 - 10)").unwrap().1,
             (
-                Environment::empty(),
+                Environment::new(),
                 Times(
                     Box::new(Plus(Box::new(Int(4)), Box::new(Int(5)))),
                     Box::new(Minus(Box::new(Int(1)), Box::new(Int(10))))
@@ -268,7 +263,7 @@ mod tests {
         assert_eq!(
             parse("if 4 < 5 then 2 + 3 else 8 * 8").unwrap().1,
             (
-                Environment::empty(),
+                Environment::new(),
                 If(
                     Box::new(Lt(Box::new(Int(4)), Box::new(Int(5)))),
                     Box::new(Plus(Box::new(Int(2)), Box::new(Int(3)))),
@@ -283,7 +278,7 @@ mod tests {
         assert_eq!(
             parse("3 + if -23 < -2 * 8 then 8 else 2 + 4").unwrap().1,
             (
-                Environment::empty(),
+                Environment::new(),
                 Plus(
                     Box::new(Int(3)),
                     Box::new(If(
@@ -304,7 +299,7 @@ mod tests {
         assert_eq!(
             parse("3 + (if -23 < -2 * 8 then 8 else 2) + 4").unwrap().1,
             (
-                Environment::empty(),
+                Environment::new(),
                 Plus(
                     Box::new(Plus(
                         Box::new(Int(3)),
@@ -328,10 +323,12 @@ mod tests {
         assert_eq!(
             parse("x = 3, y = 2 |- x").unwrap().1,
             (
-                Environment::new(vec![
-                    (Var("x".to_string()), Int(3)),
-                    (Var("y".to_string()), Int(2))
-                ]),
+                {
+                    let mut environment = Environment::new();
+                    environment.put(Var("x".to_string()), Int(3));
+                    environment.put(Var("y".to_string()), Int(2));
+                    environment
+                },
                 Var("x".to_string())
             )
         );
@@ -344,10 +341,12 @@ mod tests {
                 .unwrap()
                 .1,
             (
-                Environment::new(vec![
-                    (Var("x".to_string()), Bool(true)),
-                    (Var("y".to_string()), Int(4))
-                ]),
+                {
+                    let mut environment = Environment::new();
+                    environment.put(Var("x".to_string()), Bool(true));
+                    environment.put(Var("y".to_string()), Int(4));
+                    environment
+                },
                 If(
                     Box::new(Var("x".to_string())),
                     Box::new(Plus(Box::new(Var("y".to_string())), Box::new(Int(1)))),
@@ -362,7 +361,7 @@ mod tests {
         assert_eq!(
             parse("|- let x = 1 + 2 in x * 4").unwrap().1,
             (
-                Environment::empty(),
+                Environment::new(),
                 Let(
                     Box::new(Var("x".to_string())),
                     Box::new(Plus(Box::new(Int(1)), Box::new(Int(2)))),
@@ -379,7 +378,7 @@ mod tests {
                 .unwrap()
                 .1,
             (
-                Environment::empty(),
+                Environment::new(),
                 Let(
                     Box::new(Var("x".to_string())),
                     Box::new(Times(Box::new(Int(3)), Box::new(Int(3)))),
@@ -401,7 +400,11 @@ mod tests {
         assert_eq!(
             parse("x = 3 |- let x = x * 2 in x + x").unwrap().1,
             (
-                Environment::new(vec![(Var("x".to_string()), Int(3))]),
+                {
+                    let mut environment = Environment::new();
+                    environment.put(Var("x".to_string()), Int(3));
+                    environment
+                },
                 Let(
                     Box::new(Var("x".to_string())),
                     Box::new(Times(Box::new(Var("x".to_string())), Box::new(Int(2)))),
