@@ -1,5 +1,5 @@
 use crate::{
-    eval_ml2::ast::{Expression, Expression::*},
+    eval_ml2::ast::{Expr, Expr::*},
     util::ident,
 };
 use std::fmt;
@@ -8,62 +8,20 @@ use std::fmt;
 pub enum Rule {
     EInt(i64, usize),
     EBool(bool, usize),
-    EIfT(
-        Expression,
-        Expression,
-        Expression,
-        Box<Rule>,
-        Box<Rule>,
-        usize,
-    ),
-    EIfF(
-        Expression,
-        Expression,
-        Expression,
-        Box<Rule>,
-        Box<Rule>,
-        usize,
-    ),
-    EPlus(
-        Expression,
-        Expression,
-        Box<Rule>,
-        Box<Rule>,
-        Box<Rule>,
-        usize,
-    ),
-    EMinus(
-        Expression,
-        Expression,
-        Box<Rule>,
-        Box<Rule>,
-        Box<Rule>,
-        usize,
-    ),
-    ETimes(
-        Expression,
-        Expression,
-        Box<Rule>,
-        Box<Rule>,
-        Box<Rule>,
-        usize,
-    ),
-    ELt(
-        Expression,
-        Expression,
-        Box<Rule>,
-        Box<Rule>,
-        Box<Rule>,
-        usize,
-    ),
-    BPlus(Expression, Expression, Expression, usize),
-    BMinus(Expression, Expression, Expression, usize),
-    BTimes(Expression, Expression, Expression, usize),
-    BLt(Expression, Expression, Expression, usize),
+    EIfT(Expr, Expr, Expr, Box<Rule>, Box<Rule>, usize),
+    EIfF(Expr, Expr, Expr, Box<Rule>, Box<Rule>, usize),
+    EPlus(Expr, Expr, Box<Rule>, Box<Rule>, Box<Rule>, usize),
+    EMinus(Expr, Expr, Box<Rule>, Box<Rule>, Box<Rule>, usize),
+    ETimes(Expr, Expr, Box<Rule>, Box<Rule>, Box<Rule>, usize),
+    ELt(Expr, Expr, Box<Rule>, Box<Rule>, Box<Rule>, usize),
+    BPlus(Expr, Expr, Expr, usize),
+    BMinus(Expr, Expr, Expr, usize),
+    BTimes(Expr, Expr, Expr, usize),
+    BLt(Expr, Expr, Expr, usize),
 }
 
 impl Rule {
-    pub fn evaluated(&self) -> Expression {
+    pub fn evaluated(&self) -> Expr {
         use crate::eval_ml2::rule::Rule::*;
 
         match self {
@@ -75,10 +33,10 @@ impl Rule {
             EMinus(_, _, _, _, rule3, _) => rule3.evaluated(),
             ETimes(_, _, _, _, rule3, _) => rule3.evaluated(),
             ELt(_, _, _, _, rule3, _) => rule3.evaluated(),
-            BPlus(_, _, expression3, _) => expression3.clone(),
-            BMinus(_, _, expression3, _) => expression3.clone(),
-            BTimes(_, _, expression3, _) => expression3.clone(),
-            BLt(_, _, expression3, _) => expression3.clone(),
+            BPlus(_, _, expr3, _) => expr3.clone(),
+            BMinus(_, _, expr3, _) => expr3.clone(),
+            BTimes(_, _, expr3, _) => expr3.clone(),
+            BLt(_, _, expr3, _) => expr3.clone(),
         }
     }
 }
@@ -90,41 +48,41 @@ impl fmt::Display for Rule {
         match self {
             EInt(i, depth) => write!(f, "{}{} evalto {} by E-Int {{}}", ident(*depth), i, i),
             EBool(b, depth) => write!(f, "{}{} evalto {} by E-Bool {{}}", ident(*depth), b, b),
-            EIfT(expression1, expression2, expression3, rule1, rule2, depth) => {
+            EIfT(expr1, expr2, expr3, rule1, rule2, depth) => {
                 writeln!(
                     f,
                     "{}if {} then {} else {} evalto {} by E-IfT {{",
                     ident(*depth),
-                    expression1,
-                    expression2,
-                    expression3,
+                    expr1,
+                    expr2,
+                    expr3,
                     self.evaluated()
                 )?;
                 writeln!(f, "{};", rule1)?;
                 writeln!(f, "{}", rule2)?;
                 write!(f, "{}}}", ident(*depth))
             }
-            EIfF(expression1, expression2, expression3, rule1, rule2, depth) => {
+            EIfF(expr1, expr2, expr3, rule1, rule2, depth) => {
                 writeln!(
                     f,
                     "{}if {} then {} else {} evalto {} by E-IfF {{",
                     ident(*depth),
-                    expression1,
-                    expression2,
-                    expression3,
+                    expr1,
+                    expr2,
+                    expr3,
                     self.evaluated()
                 )?;
                 writeln!(f, "{};", rule1)?;
                 writeln!(f, "{}", rule2)?;
                 write!(f, "{}}}", ident(*depth))
             }
-            EPlus(expression1, expression2, rule1, rule2, rule3, depth) => {
+            EPlus(expr1, expr2, rule1, rule2, rule3, depth) => {
                 writeln!(
                     f,
                     "{}{} + {} evalto {} by E-Plus {{",
                     ident(*depth),
-                    expression1,
-                    expression2,
+                    expr1,
+                    expr2,
                     self.evaluated()
                 )?;
                 writeln!(f, "{};", rule1)?;
@@ -132,13 +90,13 @@ impl fmt::Display for Rule {
                 writeln!(f, "{}", rule3)?;
                 write!(f, "{}}}", ident(*depth))
             }
-            EMinus(expression1, expression2, rule1, rule2, rule3, depth) => {
+            EMinus(expr1, expr2, rule1, rule2, rule3, depth) => {
                 writeln!(
                     f,
                     "{}{} - {} evalto {} by E-Minus {{",
                     ident(*depth),
-                    expression1,
-                    expression2,
+                    expr1,
+                    expr2,
                     self.evaluated()
                 )?;
                 writeln!(f, "{};", rule1)?;
@@ -146,13 +104,13 @@ impl fmt::Display for Rule {
                 writeln!(f, "{}", rule3)?;
                 write!(f, "{}}}", ident(*depth))
             }
-            ETimes(expression1, expression2, rule1, rule2, rule3, depth) => {
+            ETimes(expr1, expr2, rule1, rule2, rule3, depth) => {
                 writeln!(
                     f,
                     "{}{} * {} evalto {} by E-Times {{",
                     ident(*depth),
-                    expression1,
-                    expression2,
+                    expr1,
+                    expr2,
                     self.evaluated()
                 )?;
                 writeln!(f, "{};", rule1)?;
@@ -160,13 +118,13 @@ impl fmt::Display for Rule {
                 writeln!(f, "{}", rule3)?;
                 write!(f, "{}}}", ident(*depth))
             }
-            ELt(expression1, expression2, rule1, rule2, rule3, depth) => {
+            ELt(expr1, expr2, rule1, rule2, rule3, depth) => {
                 writeln!(
                     f,
                     "{}{} < {} evalto {} by E-Lt {{",
                     ident(*depth),
-                    expression1,
-                    expression2,
+                    expr1,
+                    expr2,
                     self.evaluated()
                 )?;
                 writeln!(f, "{};", rule1)?;
@@ -174,43 +132,43 @@ impl fmt::Display for Rule {
                 writeln!(f, "{}", rule3)?;
                 write!(f, "{}}}", ident(*depth))
             }
-            BPlus(expression1, expression2, expression3, depth) => {
+            BPlus(expr1, expr2, expr3, depth) => {
                 write!(
                     f,
                     "{}{} plus {} is {} by B-Plus {{}}",
                     ident(*depth),
-                    expression1,
-                    expression2,
-                    expression3
+                    expr1,
+                    expr2,
+                    expr3
                 )
             }
-            BMinus(expression1, expression2, expression3, depth) => {
+            BMinus(expr1, expr2, expr3, depth) => {
                 write!(
                     f,
                     "{}{} minus {} is {} by B-Minus {{}}",
                     ident(*depth),
-                    expression1,
-                    expression2,
-                    expression3
+                    expr1,
+                    expr2,
+                    expr3
                 )
             }
-            BTimes(expression1, expression2, expression3, depth) => {
+            BTimes(expr1, expr2, expr3, depth) => {
                 write!(
                     f,
                     "{}{} times {} is {} by B-Times {{}}",
                     ident(*depth),
-                    expression1,
-                    expression2,
-                    expression3
+                    expr1,
+                    expr2,
+                    expr3
                 )
             }
-            BLt(expression1, expression2, _, depth) => {
+            BLt(expr1, expr2, _, depth) => {
                 write!(
                     f,
                     "{}{} is less than {} by B-Lt {{}}",
                     ident(*depth),
-                    expression1,
-                    expression2,
+                    expr1,
+                    expr2,
                 )
             }
         }

@@ -1,32 +1,32 @@
 use crate::eval_ml2::{
-    ast::{Expression, Expression::*},
+    ast::{Expr, Expr::*},
     rule::{Rule, Rule::*},
 };
 
-pub fn solve(expression: &Expression, depth: usize) -> Rule {
-    match expression {
+pub fn solve(expr: &Expr, depth: usize) -> Rule {
+    match expr {
         Int(i) => EInt(i.clone(), depth),
         Bool(b) => EBool(b.clone(), depth),
-        If(expression1, expression2, expression3) => {
-            let rule1 = solve(expression1, depth + 1);
+        If(expr1, expr2, expr3) => {
+            let rule1 = solve(expr1, depth + 1);
             match rule1.evaluated() {
                 Bool(true) => {
-                    let rule2 = solve(expression2, depth + 1);
+                    let rule2 = solve(expr2, depth + 1);
                     EIfT(
-                        *expression1.clone(),
-                        *expression2.clone(),
-                        *expression3.clone(),
+                        *expr1.clone(),
+                        *expr2.clone(),
+                        *expr3.clone(),
                         Box::new(rule1),
                         Box::new(rule2),
                         depth,
                     )
                 }
                 Bool(false) => {
-                    let rule2 = solve(expression3, depth + 1);
+                    let rule2 = solve(expr3, depth + 1);
                     EIfF(
-                        *expression1.clone(),
-                        *expression2.clone(),
-                        *expression3.clone(),
+                        *expr1.clone(),
+                        *expr2.clone(),
+                        *expr3.clone(),
                         Box::new(rule1),
                         Box::new(rule2),
                         depth,
@@ -35,68 +35,68 @@ pub fn solve(expression: &Expression, depth: usize) -> Rule {
                 _ => unreachable!(),
             }
         }
-        Plus(expression1, expression2) => {
-            let rule1 = solve(expression1, depth + 1);
-            let rule2 = solve(expression2, depth + 1);
-            let expression3 = match (rule1.evaluated(), rule2.evaluated()) {
+        Plus(expr1, expr2) => {
+            let rule1 = solve(expr1, depth + 1);
+            let rule2 = solve(expr2, depth + 1);
+            let expr3 = match (rule1.evaluated(), rule2.evaluated()) {
                 (Int(i1), Int(i2)) => Int(i1 + i2),
                 _ => unreachable!(),
             };
-            let rule3 = BPlus(rule1.evaluated(), rule2.evaluated(), expression3, depth + 1);
+            let rule3 = BPlus(rule1.evaluated(), rule2.evaluated(), expr3, depth + 1);
             EPlus(
-                *expression1.clone(),
-                *expression2.clone(),
+                *expr1.clone(),
+                *expr2.clone(),
                 Box::new(rule1),
                 Box::new(rule2),
                 Box::new(rule3),
                 depth,
             )
         }
-        Minus(expression1, expression2) => {
-            let rule1 = solve(expression1, depth + 1);
-            let rule2 = solve(expression2, depth + 1);
-            let expression3 = match (rule1.evaluated(), rule2.evaluated()) {
+        Minus(expr1, expr2) => {
+            let rule1 = solve(expr1, depth + 1);
+            let rule2 = solve(expr2, depth + 1);
+            let expr3 = match (rule1.evaluated(), rule2.evaluated()) {
                 (Int(i1), Int(i2)) => Int(i1 - i2),
                 _ => unreachable!(),
             };
-            let rule3 = BMinus(rule1.evaluated(), rule2.evaluated(), expression3, depth + 1);
+            let rule3 = BMinus(rule1.evaluated(), rule2.evaluated(), expr3, depth + 1);
             EMinus(
-                *expression1.clone(),
-                *expression2.clone(),
+                *expr1.clone(),
+                *expr2.clone(),
                 Box::new(rule1),
                 Box::new(rule2),
                 Box::new(rule3),
                 depth,
             )
         }
-        Times(expression1, expression2) => {
-            let rule1 = solve(expression1, depth + 1);
-            let rule2 = solve(expression2, depth + 1);
-            let expression3 = match (rule1.evaluated(), rule2.evaluated()) {
+        Times(expr1, expr2) => {
+            let rule1 = solve(expr1, depth + 1);
+            let rule2 = solve(expr2, depth + 1);
+            let expr3 = match (rule1.evaluated(), rule2.evaluated()) {
                 (Int(i1), Int(i2)) => Int(i1 * i2),
                 _ => unreachable!(),
             };
-            let rule3 = BTimes(rule1.evaluated(), rule2.evaluated(), expression3, depth + 1);
+            let rule3 = BTimes(rule1.evaluated(), rule2.evaluated(), expr3, depth + 1);
             ETimes(
-                *expression1.clone(),
-                *expression2.clone(),
+                *expr1.clone(),
+                *expr2.clone(),
                 Box::new(rule1),
                 Box::new(rule2),
                 Box::new(rule3),
                 depth,
             )
         }
-        Lt(expression1, expression2) => {
-            let rule1 = solve(expression1, depth + 1);
-            let rule2 = solve(expression2, depth + 1);
-            let expression3 = match (rule1.evaluated(), rule2.evaluated()) {
+        Lt(expr1, expr2) => {
+            let rule1 = solve(expr1, depth + 1);
+            let rule2 = solve(expr2, depth + 1);
+            let expr3 = match (rule1.evaluated(), rule2.evaluated()) {
                 (Int(i1), Int(i2)) => Bool(i1 < i2),
                 _ => unreachable!(),
             };
-            let rule3 = BLt(rule1.evaluated(), rule2.evaluated(), expression3, depth + 1);
+            let rule3 = BLt(rule1.evaluated(), rule2.evaluated(), expr3, depth + 1);
             ELt(
-                *expression1.clone(),
-                *expression2.clone(),
+                *expr1.clone(),
+                *expr2.clone(),
                 Box::new(rule1),
                 Box::new(rule2),
                 Box::new(rule3),
@@ -109,7 +109,7 @@ pub fn solve(expression: &Expression, depth: usize) -> Rule {
 
 #[cfg(test)]
 mod tests {
-    use crate::eval_ml2::{ast::Expression::*, rule::Rule::*, solver::solve};
+    use crate::eval_ml2::{ast::Expr::*, rule::Rule::*, solver::solve};
 
     #[test]
     fn test_solve1() {
