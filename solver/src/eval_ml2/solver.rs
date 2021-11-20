@@ -110,10 +110,27 @@ pub fn solve(env: &Env, expr: &Expr, depth: usize) -> Rule {
             )
         }
         Var(_) => {
-            unimplemented!()
+            if env.head().0 == expr.clone() {
+                EVar1(env.clone(), expr.clone(), depth)
+            } else {
+                let rule = solve(&env.tail(), expr, depth + 1);
+                EVar2(env.clone(), expr.clone(), Box::new(rule), depth)
+            }
         }
-        Let(_, _, _) => {
-            unimplemented!()
+        Let(expr1, expr2, expr3) => {
+            let rule1 = solve(env, expr2, depth + 1);
+            let mut new_env = env.clone();
+            new_env.put(*expr1.clone(), rule1.evaluated());
+            let rule2 = solve(&new_env, expr3, depth + 1);
+            ELet(
+                env.clone(),
+                *expr1.clone(),
+                *expr2.clone(),
+                *expr3.clone(),
+                Box::new(rule1),
+                Box::new(rule2),
+                depth,
+            )
         }
     }
 }
