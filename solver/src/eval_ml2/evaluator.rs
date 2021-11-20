@@ -141,20 +141,26 @@ mod tests {
 
     #[test]
     fn test_eval7() {
-        let mut env = Env::new();
-        env.put(Var("x".to_string()), Int(3));
-        env.put(Var("y".to_string()), Int(2));
-        assert_eq!(eval(&env, &Var("x".to_string())), Int(3));
+        assert_eq!(
+            eval(
+                &Env::from(vec![
+                    (Var("x".to_string()), Int(3)),
+                    (Var("y".to_string()), Int(2))
+                ]),
+                &Var("x".to_string())
+            ),
+            Int(3)
+        );
     }
 
     #[test]
     fn test_eval8() {
-        let mut env = Env::new();
-        env.put(Var("x".to_string()), Bool(true));
-        env.put(Var("y".to_string()), Int(4));
         assert_eq!(
             eval(
-                &env,
+                &Env::from(vec![
+                    (Var("x".to_string()), Bool(true)),
+                    (Var("y".to_string()), Int(4))
+                ]),
                 &If(
                     Box::new(Var("x".to_string())),
                     Box::new(Plus(Box::new(Var("y".to_string())), Box::new(Int(1)))),
@@ -204,11 +210,9 @@ mod tests {
 
     #[test]
     fn test_eval11() {
-        let mut env = Env::new();
-        env.put(Var("x".to_string()), Int(3));
         assert_eq!(
             eval(
-                &env,
+                &Env::from(vec![(Var("x".to_string()), Int(3))]),
                 &Let(
                     Box::new(Var("x".to_string())),
                     Box::new(Times(Box::new(Var("x".to_string())), Box::new(Int(2)))),

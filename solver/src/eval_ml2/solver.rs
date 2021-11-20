@@ -511,4 +511,214 @@ mod tests {
             )
         );
     }
+
+    #[test]
+    fn test_solve9() {
+        assert_eq!(
+            solve(
+                &Env::new(),
+                &Let(
+                    Box::new(Var("x".to_string())),
+                    Box::new(Plus(Box::new(Int(1)), Box::new(Int(2)))),
+                    Box::new(Times(Box::new(Var("x".to_string())), Box::new(Int(4))))
+                ),
+                0
+            ),
+            ELet(
+                Env::new(),
+                Var("x".to_string()),
+                Plus(Box::new(Int(1)), Box::new(Int(2))),
+                Times(Box::new(Var("x".to_string())), Box::new(Int(4))),
+                Box::new(EPlus(
+                    Env::new(),
+                    Int(1),
+                    Int(2),
+                    Box::new(EInt(Env::new(), 1, 2)),
+                    Box::new(EInt(Env::new(), 2, 2)),
+                    Box::new(BPlus(Int(1), Int(2), Int(3), 2)),
+                    1
+                )),
+                Box::new(ETimes(
+                    Env::from(vec![(Var("x".to_string()), Int(3))]),
+                    Var("x".to_string()),
+                    Int(4),
+                    Box::new(EVar1(
+                        Env::from(vec![(Var("x".to_string()), Int(3))]),
+                        Var("x".to_string()),
+                        2
+                    )),
+                    Box::new(EInt(Env::from(vec![(Var("x".to_string()), Int(3))]), 4, 2)),
+                    Box::new(BTimes(Int(3), Int(4), Int(12), 2)),
+                    1
+                )),
+                0
+            )
+        );
+    }
+
+    #[test]
+    fn test_solve10() {
+        assert_eq!(
+            solve(
+                &Env::new(),
+                &Let(
+                    Box::new(Var("x".to_string())),
+                    Box::new(Times(Box::new(Int(3)), Box::new(Int(3)))),
+                    Box::new(Let(
+                        Box::new(Var("y".to_string())),
+                        Box::new(Times(Box::new(Int(4)), Box::new(Var("x".to_string())))),
+                        Box::new(Plus(
+                            Box::new(Var("x".to_string())),
+                            Box::new(Var("y".to_string()))
+                        ))
+                    ))
+                ),
+                0
+            ),
+            ELet(
+                Env::new(),
+                Var("x".to_string()),
+                Times(Box::new(Int(3)), Box::new(Int(3))),
+                Let(
+                    Box::new(Var("y".to_string())),
+                    Box::new(Times(Box::new(Int(4)), Box::new(Var("x".to_string())))),
+                    Box::new(Plus(
+                        Box::new(Var("x".to_string())),
+                        Box::new(Var("y".to_string()))
+                    ))
+                ),
+                Box::new(ETimes(
+                    Env::new(),
+                    Int(3),
+                    Int(3),
+                    Box::new(EInt(Env::new(), 3, 2)),
+                    Box::new(EInt(Env::new(), 3, 2)),
+                    Box::new(BTimes(Int(3), Int(3), Int(9), 2)),
+                    1
+                )),
+                Box::new(ELet(
+                    Env::from(vec![(Var("x".to_string()), Int(9))]),
+                    Var("y".to_string()),
+                    Times(Box::new(Int(4)), Box::new(Var("x".to_string()))),
+                    Plus(
+                        Box::new(Var("x".to_string())),
+                        Box::new(Var("y".to_string()))
+                    ),
+                    Box::new(ETimes(
+                        Env::from(vec![(Var("x".to_string()), Int(9))]),
+                        Int(4),
+                        Var("x".to_string()),
+                        Box::new(EInt(Env::from(vec![(Var("x".to_string()), Int(9))]), 4, 3)),
+                        Box::new(EVar1(
+                            Env::from(vec![(Var("x".to_string()), Int(9))]),
+                            Var("x".to_string()),
+                            3
+                        )),
+                        Box::new(BTimes(Int(4), Int(9), Int(36), 3)),
+                        2
+                    )),
+                    Box::new(EPlus(
+                        Env::from(vec![
+                            (Var("x".to_string()), Int(9)),
+                            (Var("y".to_string()), Int(36))
+                        ]),
+                        Var("x".to_string()),
+                        Var("y".to_string()),
+                        Box::new(EVar2(
+                            Env::from(vec![
+                                (Var("x".to_string()), Int(9)),
+                                (Var("y".to_string()), Int(36))
+                            ]),
+                            Var("x".to_string()),
+                            Box::new(EVar1(
+                                Env::from(vec![(Var("x".to_string()), Int(9))]),
+                                Var("x".to_string()),
+                                4
+                            )),
+                            3
+                        )),
+                        Box::new(EVar1(
+                            Env::from(vec![
+                                (Var("x".to_string()), Int(9)),
+                                (Var("y".to_string()), Int(36))
+                            ]),
+                            Var("y".to_string()),
+                            3
+                        )),
+                        Box::new(BPlus(Int(9), Int(36), Int(45), 3)),
+                        2
+                    )),
+                    1
+                )),
+                0
+            )
+        );
+    }
+
+    #[test]
+    fn test_solve11() {
+        assert_eq!(
+            solve(
+                &Env::from(vec![(Var("x".to_string()), Int(3))]),
+                &Let(
+                    Box::new(Var("x".to_string())),
+                    Box::new(Times(Box::new(Var("x".to_string())), Box::new(Int(2)))),
+                    Box::new(Plus(
+                        Box::new(Var("x".to_string())),
+                        Box::new(Var("x".to_string()))
+                    )),
+                ),
+                0
+            ),
+            ELet(
+                Env::from(vec![(Var("x".to_string()), Int(3))]),
+                Var("x".to_string()),
+                Times(Box::new(Var("x".to_string())), Box::new(Int(2))),
+                Plus(
+                    Box::new(Var("x".to_string())),
+                    Box::new(Var("x".to_string()))
+                ),
+                Box::new(ETimes(
+                    Env::from(vec![(Var("x".to_string()), Int(3))]),
+                    Var("x".to_string()),
+                    Int(2),
+                    Box::new(EVar1(
+                        Env::from(vec![(Var("x".to_string()), Int(3))]),
+                        Var("x".to_string()),
+                        2
+                    )),
+                    Box::new(EInt(Env::from(vec![(Var("x".to_string()), Int(3))]), 2, 2)),
+                    Box::new(BTimes(Int(3), Int(2), Int(6), 2)),
+                    1
+                )),
+                Box::new(EPlus(
+                    Env::from(vec![
+                        (Var("x".to_string()), Int(3)),
+                        (Var("x".to_string()), Int(6))
+                    ]),
+                    Var("x".to_string()),
+                    Var("x".to_string()),
+                    Box::new(EVar1(
+                        Env::from(vec![
+                            (Var("x".to_string()), Int(3)),
+                            (Var("x".to_string()), Int(6))
+                        ]),
+                        Var("x".to_string()),
+                        2
+                    )),
+                    Box::new(EVar1(
+                        Env::from(vec![
+                            (Var("x".to_string()), Int(3)),
+                            (Var("x".to_string()), Int(6))
+                        ]),
+                        Var("x".to_string()),
+                        2
+                    )),
+                    Box::new(BPlus(Int(6), Int(6), Int(12), 2)),
+                    1
+                )),
+                0
+            )
+        );
+    }
 }
