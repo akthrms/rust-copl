@@ -41,6 +41,11 @@ impl Env {
         Env(vec![])
     }
 
+    pub fn from(pairs: Vec<(Expr, Expr)>) -> Env {
+        let pairs = pairs.into_iter().rev().collect::<Vec<_>>();
+        Env(pairs)
+    }
+
     pub fn put(&mut self, expr1: Expr, expr2: Expr) {
         self.0.insert(0, (expr1, expr2))
     }
@@ -62,7 +67,7 @@ impl fmt::Display for Env {
             .iter()
             .rev()
             .map(|(expr1, expr2)| format!("{} = {}", expr1, expr2))
-            .collect::<Vec<String>>();
+            .collect::<Vec<_>>();
         write!(f, "{}", pairs.join(", "))
     }
 }
@@ -80,5 +85,13 @@ mod tests {
         assert_eq!("x = 1, y = 2, x = 3", env.to_string());
         assert_eq!(Int(3), env.get(&Var("x".to_string())));
         assert_eq!(Int(2), env.get(&Var("y".to_string())));
+        assert_eq!(
+            "x = 1, y = 2",
+            Env::from(vec![
+                (Var("x".to_string()), Int(1)),
+                (Var("y".to_string()), Int(2)),
+            ])
+            .to_string()
+        );
     }
 }

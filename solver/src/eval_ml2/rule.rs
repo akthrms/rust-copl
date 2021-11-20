@@ -1,13 +1,13 @@
 use crate::{
-    eval_ml2::ast::{Expr, Expr::*},
+    eval_ml2::ast::{Env, Expr, Expr::*},
     util::ident,
 };
 use std::fmt;
 
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub enum Rule {
-    EInt(i64, usize),
-    EBool(bool, usize),
+    EInt(Env, i64, usize),
+    EBool(Env, bool, usize),
     EIfT(Expr, Expr, Expr, Box<Rule>, Box<Rule>, usize),
     EIfF(Expr, Expr, Expr, Box<Rule>, Box<Rule>, usize),
     EPlus(Expr, Expr, Box<Rule>, Box<Rule>, Box<Rule>, usize),
@@ -18,6 +18,9 @@ pub enum Rule {
     BMinus(Expr, Expr, Expr, usize),
     BTimes(Expr, Expr, Expr, usize),
     BLt(Expr, Expr, Expr, usize),
+    EVar1(Env, Expr, usize),
+    EVar2(Env, Expr, Box<Rule>, usize),
+    ELet(Env, Expr, Expr, Expr, Box<Rule>, Box<Rule>, usize),
 }
 
 impl Rule {
@@ -25,8 +28,8 @@ impl Rule {
         use crate::eval_ml2::rule::Rule::*;
 
         match self {
-            EInt(i, _) => Int(i.clone()),
-            EBool(b, _) => Bool(b.clone()),
+            EInt(_, i, _) => Int(i.clone()),
+            EBool(_, b, _) => Bool(b.clone()),
             EIfT(_, _, _, _, rule2, _) => rule2.evaluated(),
             EIfF(_, _, _, _, rule2, _) => rule2.evaluated(),
             EPlus(_, _, _, _, rule3, _) => rule3.evaluated(),
@@ -37,6 +40,9 @@ impl Rule {
             BMinus(_, _, expr3, _) => expr3.clone(),
             BTimes(_, _, expr3, _) => expr3.clone(),
             BLt(_, _, expr3, _) => expr3.clone(),
+            EVar1(_, expr, _) => expr.clone(),
+            EVar2(_, _, rule, _) => rule.evaluated(),
+            ELet(_, _, _, _, _, rule2, _) => rule2.evaluated(),
         }
     }
 }
@@ -46,8 +52,26 @@ impl fmt::Display for Rule {
         use crate::eval_ml2::rule::Rule::*;
 
         match self {
-            EInt(i, depth) => write!(f, "{}{} evalto {} by E-Int {{}}", ident(*depth), i, i),
-            EBool(b, depth) => write!(f, "{}{} evalto {} by E-Bool {{}}", ident(*depth), b, b),
+            EInt(env, i, depth) => {
+                write!(
+                    f,
+                    "{}{} |- {} evalto {} by E-Int {{}}",
+                    ident(*depth),
+                    env,
+                    i,
+                    i
+                )
+            }
+            EBool(env, b, depth) => {
+                write!(
+                    f,
+                    "{}{} |- {} evalto {} by E-Bool {{}}",
+                    ident(*depth),
+                    env,
+                    b,
+                    b
+                )
+            }
             EIfT(expr1, expr2, expr3, rule1, rule2, depth) => {
                 writeln!(
                     f,
@@ -170,6 +194,43 @@ impl fmt::Display for Rule {
                     expr1,
                     expr2,
                 )
+            }
+            EVar1(env, expr, depth) => {
+                write!(
+                    f,
+                    "{}{} |- {} evalto {} by E-Var1 {{}}",
+                    ident(*depth),
+                    env,
+                    expr,
+                    self.evaluated()
+                )
+            }
+            EVar2(env, expr, rule, depth) => {
+                write!(
+                    f,
+                    "{}{} |- {} evalto {} by E-Var2 {{",
+                    ident(*depth),
+                    env,
+                    expr,
+                    self.evaluated()
+                )?;
+                writeln!(f, "{}", rule)?;
+                write!(f, "{}}}", ident(*depth))
+            }
+            ELet(env, expr1, expr2, expr3, rule1, rule2, depth) => {
+                writeln!(
+                    f,
+                    "{}{} |- let {} = {} in {} evalto {} by E-Let {{",
+                    ident(*depth),
+                    env,
+                    expr1,
+                    expr2,
+                    expr3,
+                    self.evaluated()
+                )?;
+                writeln!(f, "{};", rule1)?;
+                writeln!(f, "{}", rule2)?;
+                write!(f, "{}}}", ident(*depth))
             }
         }
     }
