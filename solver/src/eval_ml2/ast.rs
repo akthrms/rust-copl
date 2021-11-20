@@ -42,17 +42,17 @@ impl Env {
     }
 
     pub fn from(pairs: Vec<(Expr, Expr)>) -> Env {
-        let pairs = pairs.into_iter().rev().collect::<Vec<_>>();
         Env(pairs)
     }
 
     pub fn put(&mut self, expr1: Expr, expr2: Expr) {
-        self.0.insert(0, (expr1, expr2))
+        self.0.push((expr1, expr2))
     }
 
     pub fn get(&self, expr: &Expr) -> Expr {
         self.0
             .iter()
+            .rev()
             .find(|(expr1, _)| expr1 == expr)
             .unwrap()
             .1
@@ -65,7 +65,6 @@ impl fmt::Display for Env {
         let pairs = self
             .0
             .iter()
-            .rev()
             .map(|(expr1, expr2)| format!("{} = {}", expr1, expr2))
             .collect::<Vec<_>>();
         write!(f, "{}", pairs.join(", "))

@@ -40,7 +40,7 @@ impl Rule {
             BMinus(_, _, expr3, _) => expr3.clone(),
             BTimes(_, _, expr3, _) => expr3.clone(),
             BLt(_, _, expr3, _) => expr3.clone(),
-            EVar1(_, expr, _) => expr.clone(),
+            EVar1(env, expr, _) => env.get(expr),
             EVar2(_, _, rule, _) => rule.evaluated(),
             ELet(_, _, _, _, _, rule2, _) => rule2.evaluated(),
         }
@@ -212,7 +212,7 @@ impl fmt::Display for Rule {
                 )
             }
             EVar2(env, expr, rule, depth) => {
-                write!(
+                writeln!(
                     f,
                     "{}{} |- {} evalto {} by E-Var2 {{",
                     ident(*depth),

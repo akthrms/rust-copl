@@ -109,7 +109,12 @@ pub fn solve(env: &Env, expr: &Expr, depth: usize) -> Rule {
                 depth,
             )
         }
-        _ => unimplemented!(),
+        Var(_) => {
+            unimplemented!()
+        }
+        Let(_, _, _) => {
+            unimplemented!()
+        }
     }
 }
 
