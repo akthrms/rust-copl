@@ -42,29 +42,29 @@ impl Env {
     }
 
     pub fn from(pairs: Vec<(Expr, Expr)>) -> Env {
-        let pairs = pairs.into_iter().rev().collect::<Vec<_>>();
         Env(pairs)
     }
 
     pub fn put(&mut self, expr1: Expr, expr2: Expr) {
-        self.0.insert(0, (expr1, expr2))
+        self.0.push((expr1, expr2))
     }
 
     pub fn get(&self, expr: &Expr) -> Expr {
         self.0
             .iter()
+            .rev()
             .find(|(expr1, _)| expr1 == expr)
             .unwrap()
             .1
             .clone()
     }
 
-    pub fn head(&self) -> (Expr, Expr) {
-        self.0.first().map(|pair| pair.clone()).unwrap()
+    pub fn last(&self) -> (Expr, Expr) {
+        self.0.last().map(|pair| pair.clone()).unwrap()
     }
 
-    pub fn tail(&self) -> Env {
-        let pairs = self.0[1..].to_vec();
+    pub fn butlast(&self) -> Env {
+        let pairs = self.0[..self.0.len() - 1].to_vec();
         Env(pairs)
     }
 }
@@ -74,7 +74,6 @@ impl fmt::Display for Env {
         let pairs = self
             .0
             .iter()
-            .rev()
             .map(|(expr1, expr2)| format!("{} = {}", expr1, expr2))
             .collect::<Vec<_>>();
         write!(f, "{}", pairs.join(", "))
@@ -102,13 +101,13 @@ mod tests {
             ])
             .to_string()
         );
-        assert_eq!((Var("x".to_string()), Int(3)), env.head());
+        assert_eq!((Var("x".to_string()), Int(3)), env.last());
         assert_eq!(
             Env::from(vec![
                 (Var("x".to_string()), Int(1)),
                 (Var("y".to_string()), Int(2))
             ]),
-            env.tail()
+            env.butlast()
         )
     }
 }

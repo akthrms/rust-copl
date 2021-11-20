@@ -110,10 +110,10 @@ pub fn solve(env: &Env, expr: &Expr, depth: usize) -> Rule {
             )
         }
         Var(_) => {
-            if env.head().0 == expr.clone() {
+            if env.last().0 == expr.clone() {
                 EVar1(env.clone(), expr.clone(), depth)
             } else {
-                let rule = solve(&env.tail(), expr, depth + 1);
+                let rule = solve(&env.butlast(), expr, depth + 1);
                 EVar2(env.clone(), expr.clone(), Box::new(rule), depth)
             }
         }

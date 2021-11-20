@@ -40,7 +40,7 @@ impl Rule {
             BMinus(_, _, expr3, _) => expr3.clone(),
             BTimes(_, _, expr3, _) => expr3.clone(),
             BLt(_, _, expr3, _) => expr3.clone(),
-            EVar1(env, _, _) => env.head().1,
+            EVar1(env, _, _) => env.last().1,
             EVar2(_, _, rule, _) => rule.evaluated(),
             ELet(_, _, _, _, _, rule2, _) => rule2.evaluated(),
         }
