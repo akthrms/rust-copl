@@ -13,6 +13,7 @@ pub fn solve(env: &Env, expr: &Expr, depth: usize) -> Rule {
                 Bool(true) => {
                     let rule2 = solve(env, expr2, depth + 1);
                     EIfT(
+                        env.clone(),
                         *expr1.clone(),
                         *expr2.clone(),
                         *expr3.clone(),
@@ -24,6 +25,7 @@ pub fn solve(env: &Env, expr: &Expr, depth: usize) -> Rule {
                 Bool(false) => {
                     let rule2 = solve(env, expr3, depth + 1);
                     EIfF(
+                        env.clone(),
                         *expr1.clone(),
                         *expr2.clone(),
                         *expr3.clone(),
@@ -44,6 +46,7 @@ pub fn solve(env: &Env, expr: &Expr, depth: usize) -> Rule {
             };
             let rule3 = BPlus(rule1.evaluated(), rule2.evaluated(), expr3, depth + 1);
             EPlus(
+                env.clone(),
                 *expr1.clone(),
                 *expr2.clone(),
                 Box::new(rule1),
@@ -61,6 +64,7 @@ pub fn solve(env: &Env, expr: &Expr, depth: usize) -> Rule {
             };
             let rule3 = BMinus(rule1.evaluated(), rule2.evaluated(), expr3, depth + 1);
             EMinus(
+                env.clone(),
                 *expr1.clone(),
                 *expr2.clone(),
                 Box::new(rule1),
@@ -78,6 +82,7 @@ pub fn solve(env: &Env, expr: &Expr, depth: usize) -> Rule {
             };
             let rule3 = BTimes(rule1.evaluated(), rule2.evaluated(), expr3, depth + 1);
             ETimes(
+                env.clone(),
                 *expr1.clone(),
                 *expr2.clone(),
                 Box::new(rule1),
@@ -95,6 +100,7 @@ pub fn solve(env: &Env, expr: &Expr, depth: usize) -> Rule {
             };
             let rule3 = BLt(rule1.evaluated(), rule2.evaluated(), expr3, depth + 1);
             ELt(
+                env.clone(),
                 *expr1.clone(),
                 *expr2.clone(),
                 Box::new(rule1),
@@ -120,6 +126,7 @@ mod tests {
         assert_eq!(
             solve(&Env::new(), &Plus(Box::new(Int(3)), Box::new(Int(5))), 0),
             EPlus(
+                Env::new(),
                 Int(3),
                 Int(5),
                 Box::new(EInt(Env::new(), 3, 1)),
@@ -142,9 +149,11 @@ mod tests {
                 0
             ),
             EMinus(
+                Env::new(),
                 Minus(Box::new(Int(8)), Box::new(Int(2))),
                 Int(3),
                 Box::new(EMinus(
+                    Env::new(),
                     Int(8),
                     Int(2),
                     Box::new(EInt(Env::new(), 8, 2)),
@@ -171,9 +180,11 @@ mod tests {
                 0
             ),
             ETimes(
+                Env::new(),
                 Plus(Box::new(Int(4)), Box::new(Int(5))),
                 Minus(Box::new(Int(1)), Box::new(Int(10))),
                 Box::new(EPlus(
+                    Env::new(),
                     Int(4),
                     Int(5),
                     Box::new(EInt(Env::new(), 4, 2)),
@@ -182,6 +193,7 @@ mod tests {
                     1
                 )),
                 Box::new(EMinus(
+                    Env::new(),
                     Int(1),
                     Int(10),
                     Box::new(EInt(Env::new(), 1, 2)),
@@ -208,10 +220,12 @@ mod tests {
                 0
             ),
             EIfT(
+                Env::new(),
                 Lt(Box::new(Int(4)), Box::new(Int(5))),
                 Plus(Box::new(Int(2)), Box::new(Int(3))),
                 Times(Box::new(Int(8)), Box::new(Int(8))),
                 Box::new(ELt(
+                    Env::new(),
                     Int(4),
                     Int(5),
                     Box::new(EInt(Env::new(), 4, 2)),
@@ -220,6 +234,7 @@ mod tests {
                     1
                 )),
                 Box::new(EPlus(
+                    Env::new(),
                     Int(2),
                     Int(3),
                     Box::new(EInt(Env::new(), 2, 2)),
@@ -251,6 +266,7 @@ mod tests {
                 0
             ),
             EPlus(
+                Env::new(),
                 Int(3),
                 If(
                     Box::new(Lt(
@@ -262,6 +278,7 @@ mod tests {
                 ),
                 Box::new(EInt(Env::new(), 3, 1)),
                 Box::new(EIfT(
+                    Env::new(),
                     Lt(
                         Box::new(Int(-23)),
                         Box::new(Times(Box::new(Int(-2)), Box::new(Int(8))))
@@ -269,10 +286,12 @@ mod tests {
                     Int(8),
                     Plus(Box::new(Int(2)), Box::new(Int(4))),
                     Box::new(ELt(
+                        Env::new(),
                         Int(-23),
                         Times(Box::new(Int(-2)), Box::new(Int(8))),
                         Box::new(EInt(Env::new(), -23, 3)),
                         Box::new(ETimes(
+                            Env::new(),
                             Int(-2),
                             Int(8),
                             Box::new(EInt(Env::new(), -2, 4)),
@@ -314,6 +333,7 @@ mod tests {
                 0
             ),
             EPlus(
+                Env::new(),
                 Plus(
                     Box::new(Int(3)),
                     Box::new(If(
@@ -327,6 +347,7 @@ mod tests {
                 ),
                 Int(4),
                 Box::new(EPlus(
+                    Env::new(),
                     Int(3),
                     If(
                         Box::new(Lt(
@@ -338,6 +359,7 @@ mod tests {
                     ),
                     Box::new(EInt(Env::new(), 3, 2)),
                     Box::new(EIfT(
+                        Env::new(),
                         Lt(
                             Box::new(Int(-23)),
                             Box::new(Times(Box::new(Int(-2)), Box::new(Int(8))))
@@ -345,10 +367,12 @@ mod tests {
                         Int(8),
                         Int(2),
                         Box::new(ELt(
+                            Env::new(),
                             Int(-23),
                             Times(Box::new(Int(-2)), Box::new(Int(8))),
                             Box::new(EInt(Env::new(), -23, 4)),
                             Box::new(ETimes(
+                                Env::new(),
                                 Int(-2),
                                 Int(8),
                                 Box::new(EInt(Env::new(), -2, 5)),

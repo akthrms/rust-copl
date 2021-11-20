@@ -8,12 +8,12 @@ use std::fmt;
 pub enum Rule {
     EInt(Env, i64, usize),
     EBool(Env, bool, usize),
-    EIfT(Expr, Expr, Expr, Box<Rule>, Box<Rule>, usize),
-    EIfF(Expr, Expr, Expr, Box<Rule>, Box<Rule>, usize),
-    EPlus(Expr, Expr, Box<Rule>, Box<Rule>, Box<Rule>, usize),
-    EMinus(Expr, Expr, Box<Rule>, Box<Rule>, Box<Rule>, usize),
-    ETimes(Expr, Expr, Box<Rule>, Box<Rule>, Box<Rule>, usize),
-    ELt(Expr, Expr, Box<Rule>, Box<Rule>, Box<Rule>, usize),
+    EIfT(Env, Expr, Expr, Expr, Box<Rule>, Box<Rule>, usize),
+    EIfF(Env, Expr, Expr, Expr, Box<Rule>, Box<Rule>, usize),
+    EPlus(Env, Expr, Expr, Box<Rule>, Box<Rule>, Box<Rule>, usize),
+    EMinus(Env, Expr, Expr, Box<Rule>, Box<Rule>, Box<Rule>, usize),
+    ETimes(Env, Expr, Expr, Box<Rule>, Box<Rule>, Box<Rule>, usize),
+    ELt(Env, Expr, Expr, Box<Rule>, Box<Rule>, Box<Rule>, usize),
     BPlus(Expr, Expr, Expr, usize),
     BMinus(Expr, Expr, Expr, usize),
     BTimes(Expr, Expr, Expr, usize),
@@ -30,12 +30,12 @@ impl Rule {
         match self {
             EInt(_, i, _) => Int(i.clone()),
             EBool(_, b, _) => Bool(b.clone()),
-            EIfT(_, _, _, _, rule2, _) => rule2.evaluated(),
-            EIfF(_, _, _, _, rule2, _) => rule2.evaluated(),
-            EPlus(_, _, _, _, rule3, _) => rule3.evaluated(),
-            EMinus(_, _, _, _, rule3, _) => rule3.evaluated(),
-            ETimes(_, _, _, _, rule3, _) => rule3.evaluated(),
-            ELt(_, _, _, _, rule3, _) => rule3.evaluated(),
+            EIfT(_, _, _, _, _, rule2, _) => rule2.evaluated(),
+            EIfF(_, _, _, _, _, rule2, _) => rule2.evaluated(),
+            EPlus(_, _, _, _, _, rule3, _) => rule3.evaluated(),
+            EMinus(_, _, _, _, _, rule3, _) => rule3.evaluated(),
+            ETimes(_, _, _, _, _, rule3, _) => rule3.evaluated(),
+            ELt(_, _, _, _, _, rule3, _) => rule3.evaluated(),
             BPlus(_, _, expr3, _) => expr3.clone(),
             BMinus(_, _, expr3, _) => expr3.clone(),
             BTimes(_, _, expr3, _) => expr3.clone(),
@@ -72,11 +72,12 @@ impl fmt::Display for Rule {
                     b
                 )
             }
-            EIfT(expr1, expr2, expr3, rule1, rule2, depth) => {
+            EIfT(env, expr1, expr2, expr3, rule1, rule2, depth) => {
                 writeln!(
                     f,
-                    "{}if {} then {} else {} evalto {} by E-IfT {{",
+                    "{}{} |- if {} then {} else {} evalto {} by E-IfT {{",
                     ident(*depth),
+                    env,
                     expr1,
                     expr2,
                     expr3,
@@ -86,11 +87,12 @@ impl fmt::Display for Rule {
                 writeln!(f, "{}", rule2)?;
                 write!(f, "{}}}", ident(*depth))
             }
-            EIfF(expr1, expr2, expr3, rule1, rule2, depth) => {
+            EIfF(env, expr1, expr2, expr3, rule1, rule2, depth) => {
                 writeln!(
                     f,
-                    "{}if {} then {} else {} evalto {} by E-IfF {{",
+                    "{}{} |- if {} then {} else {} evalto {} by E-IfF {{",
                     ident(*depth),
+                    env,
                     expr1,
                     expr2,
                     expr3,
@@ -100,11 +102,12 @@ impl fmt::Display for Rule {
                 writeln!(f, "{}", rule2)?;
                 write!(f, "{}}}", ident(*depth))
             }
-            EPlus(expr1, expr2, rule1, rule2, rule3, depth) => {
+            EPlus(env, expr1, expr2, rule1, rule2, rule3, depth) => {
                 writeln!(
                     f,
-                    "{}{} + {} evalto {} by E-Plus {{",
+                    "{}{} |- {} + {} evalto {} by E-Plus {{",
                     ident(*depth),
+                    env,
                     expr1,
                     expr2,
                     self.evaluated()
@@ -114,11 +117,12 @@ impl fmt::Display for Rule {
                 writeln!(f, "{}", rule3)?;
                 write!(f, "{}}}", ident(*depth))
             }
-            EMinus(expr1, expr2, rule1, rule2, rule3, depth) => {
+            EMinus(env, expr1, expr2, rule1, rule2, rule3, depth) => {
                 writeln!(
                     f,
-                    "{}{} - {} evalto {} by E-Minus {{",
+                    "{}{} |- {} - {} evalto {} by E-Minus {{",
                     ident(*depth),
+                    env,
                     expr1,
                     expr2,
                     self.evaluated()
@@ -128,11 +132,12 @@ impl fmt::Display for Rule {
                 writeln!(f, "{}", rule3)?;
                 write!(f, "{}}}", ident(*depth))
             }
-            ETimes(expr1, expr2, rule1, rule2, rule3, depth) => {
+            ETimes(env, expr1, expr2, rule1, rule2, rule3, depth) => {
                 writeln!(
                     f,
-                    "{}{} * {} evalto {} by E-Times {{",
+                    "{}{} |- {} * {} evalto {} by E-Times {{",
                     ident(*depth),
+                    env,
                     expr1,
                     expr2,
                     self.evaluated()
@@ -142,11 +147,12 @@ impl fmt::Display for Rule {
                 writeln!(f, "{}", rule3)?;
                 write!(f, "{}}}", ident(*depth))
             }
-            ELt(expr1, expr2, rule1, rule2, rule3, depth) => {
+            ELt(env, expr1, expr2, rule1, rule2, rule3, depth) => {
                 writeln!(
                     f,
-                    "{}{} < {} evalto {} by E-Lt {{",
+                    "{}{} |- {} < {} evalto {} by E-Lt {{",
                     ident(*depth),
+                    env,
                     expr1,
                     expr2,
                     self.evaluated()
