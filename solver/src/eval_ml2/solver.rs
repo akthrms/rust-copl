@@ -417,4 +417,98 @@ mod tests {
             )
         );
     }
+
+    #[test]
+    fn test_solve7() {
+        assert_eq!(
+            solve(
+                &Env::from(vec![
+                    (Var("x".to_string()), Int(3)),
+                    (Var("y".to_string()), Int(2))
+                ]),
+                &Var("x".to_string()),
+                0
+            ),
+            EVar2(
+                Env::from(vec![
+                    (Var("x".to_string()), Int(3)),
+                    (Var("y".to_string()), Int(2))
+                ]),
+                Var("x".to_string()),
+                Box::new(EVar1(
+                    Env::from(vec![(Var("x".to_string()), Int(3))]),
+                    Var("x".to_string()),
+                    1
+                )),
+                0
+            )
+        );
+    }
+
+    #[test]
+    fn test_solve8() {
+        assert_eq!(
+            solve(
+                &Env::from(vec![
+                    (Var("x".to_string()), Bool(true)),
+                    (Var("y".to_string()), Int(4))
+                ]),
+                &If(
+                    Box::new(Var("x".to_string())),
+                    Box::new(Plus(Box::new(Var("y".to_string())), Box::new(Int(1)))),
+                    Box::new(Var("y".to_string()))
+                ),
+                0
+            ),
+            EIfT(
+                Env::from(vec![
+                    (Var("x".to_string()), Bool(true)),
+                    (Var("y".to_string()), Int(4))
+                ]),
+                Var("x".to_string()),
+                Plus(Box::new(Var("y".to_string())), Box::new(Int(1))),
+                Var("y".to_string()),
+                Box::new(EVar2(
+                    Env::from(vec![
+                        (Var("x".to_string()), Bool(true)),
+                        (Var("y".to_string()), Int(4))
+                    ]),
+                    Var("x".to_string()),
+                    Box::new(EVar1(
+                        Env::from(vec![(Var("x".to_string()), Bool(true))]),
+                        Var("x".to_string()),
+                        2
+                    )),
+                    1
+                )),
+                Box::new(EPlus(
+                    Env::from(vec![
+                        (Var("x".to_string()), Bool(true)),
+                        (Var("y".to_string()), Int(4))
+                    ]),
+                    Var("y".to_string()),
+                    Int(1),
+                    Box::new(EVar1(
+                        Env::from(vec![
+                            (Var("x".to_string()), Bool(true)),
+                            (Var("y".to_string()), Int(4))
+                        ]),
+                        Var("y".to_string()),
+                        2
+                    )),
+                    Box::new(EInt(
+                        Env::from(vec![
+                            (Var("x".to_string()), Bool(true)),
+                            (Var("y".to_string()), Int(4))
+                        ]),
+                        1,
+                        2
+                    )),
+                    Box::new(BPlus(Int(4), Int(1), Int(5), 2)),
+                    1
+                )),
+                0
+            )
+        );
+    }
 }

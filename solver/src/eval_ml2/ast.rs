@@ -102,5 +102,13 @@ mod tests {
             ])
             .to_string()
         );
+        assert_eq!((Var("x".to_string()), Int(3)), env.head());
+        assert_eq!(
+            Env::from(vec![
+                (Var("x".to_string()), Int(1)),
+                (Var("y".to_string()), Int(2))
+            ]),
+            env.tail()
+        )
     }
 }
