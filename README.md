@@ -1,4 +1,4 @@
-# CoPL
+# プログラミング言語の基礎概念（CoPL）
 
 https://www.fos.kuis.kyoto-u.ac.jp/~igarashi/CoPL/
 
